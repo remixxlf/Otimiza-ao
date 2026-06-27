@@ -156,12 +156,13 @@ function Show-SystemDiag {
 function Show-Banner {
     Clear-Host
     Write-Host ""
-    Write-Host "   ██████╗ ████████╗██╗███╗   ███╗██╗███████╗ █████╗ " -ForegroundColor Cyan
-    Write-Host "  ██╔═══██╗╚══██╔══╝██║████╗ ████║██║██╔════╝██╔══██╗" -ForegroundColor Cyan
-    Write-Host "  ██║   ██║   ██║   ██║██╔████╔██║██║█████╗  ███████║" -ForegroundColor Cyan
-    Write-Host "  ██║   ██║   ██║   ██║██║╚██╔╝██║██║██╔══╝  ██╔══██║" -ForegroundColor DarkCyan
-    Write-Host "  ╚██████╔╝   ██║   ██║██║ ╚═╝ ██║██║███████╗██║  ██║" -ForegroundColor DarkCyan
-    Write-Host "   ╚═════╝    ╚═╝   ╚═╝╚═╝     ╚═╝╚═╝╚══════╝╚═╝  ╚═╝" -ForegroundColor DarkGray
+    Write-Host "      ___       ___       ___       ___       ___       ___       ___   " -ForegroundColor Cyan
+    Write-Host "     /\  \     /\  \     /\__\     /\  \     /\__\     /\__\     /\  \  " -ForegroundColor Cyan
+    Write-Host "    /::\  \   /::\  \   /::L_L_   _\:\  \   |::L__L   /:/  /    /::\  \ " -ForegroundColor Cyan
+    Write-Host "   /::\:\__\ /::\:\__\ /:/L:\__\ /\/::\__\ /::::\__\ /:/__/    /::\:\__\" -ForegroundColor DarkCyan
+    Write-Host "   \;:::/  / \:\:\/  / \/_/:/  / \::/\/__/ \;::;/__/ \:\  \    \/\:\/__/" -ForegroundColor DarkCyan
+    Write-Host "    |:\/__/   \:\/  /    /:/  /   \:\__\    |::|__|   \:\__\      \/__/ " -ForegroundColor DarkGray
+    Write-Host "     \|__|     \/__/     \/__/     \/__/     \/__/     \/__/            " -ForegroundColor DarkGray
     Write-Host ""
     Write-Host "  ========================================================" -ForegroundColor Magenta
     Write-Host "          ⚡ OTIMIZADOR ZERO-CLICK (v3.0) ⚡            " -ForegroundColor Yellow
