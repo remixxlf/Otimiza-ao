@@ -22,8 +22,26 @@ FONTES:
 # ============================================================
 # CONFIGURACAO E CORES
 # ============================================================
-$Host.UI.RawUI.WindowTitle = "Otimizador Windows v2.0 - Community Edition"
+$Host.UI.RawUI.WindowTitle = "Otimizador Windows v3.0 - Zero-Click Edition"
 $ErrorActionPreference = "SilentlyContinue"
+
+# Variaveis globais de progresso
+$script:totalSteps = 19
+$script:currentStep = 0
+
+function Show-Progress {
+    param([string]$StepName)
+    $script:currentStep++
+    $percent = [math]::Round(($script:currentStep / $script:totalSteps) * 100)
+    $barLength = 30
+    $filled = [math]::Round($barLength * $script:currentStep / $script:totalSteps)
+    $empty = $barLength - $filled
+    $bar = ('█' * $filled) + ('░' * $empty)
+    
+    Write-Host ""
+    Write-Host "  [$bar] $percent% ($script:currentStep/$script:totalSteps) - $StepName" -ForegroundColor Magenta
+    $Host.UI.RawUI.WindowTitle = "Otimizador v3.0 - $percent% - $StepName"
+}
 
 function Write-Header {
     param([string]$Text)
@@ -1469,42 +1487,80 @@ function Apply-UltraDebloat {
 }
 
 # ============================================================
-# EXECUCAO LINEAR AUTOMATICA
+# EXECUCAO LINEAR AUTOMATICA COM BARRA DE PROGRESSO
 # ============================================================
 
 Show-Banner
+
+Show-Progress "Diagnostico do Sistema"
 Show-SystemDiag
+
+Show-Progress "Criando Ponto de Restauracao"
 Create-RestorePoint
+
+Show-Progress "Deteccao de Hardware e Limpador Stealth"
 Apply-IntelligentTweaks
 
 Write-Host ""
 Write-Host "  🔥 APLICANDO TODAS AS OTIMIZACOES (SEGURAS + AVANCADAS + EXTREMAS)..." -ForegroundColor Red
 Write-Host ""
 
+Show-Progress "Plano de Energia Ultimate Performance"
 Optimize-PowerPlan
+
+Show-Progress "Desativando Servicos Desnecessarios"
 Disable-UnnecessaryServices
+
+Show-Progress "Tweaks de Registro (Visual, Input Lag)"
 Apply-RegistryTweaks
+
+Show-Progress "Otimizacoes de Rede (Latencia/Ping)"
 Optimize-Network
+
+Show-Progress "Limpeza do Sistema (Temp, Cache, WinSxS)"
 Clean-System
+
+Show-Progress "Otimizacoes de GPU"
 Optimize-GPU
+
+Show-Progress "Removendo Bloatware (Debloat Estilo ISO)"
 Remove-Bloatware
+
+Show-Progress "Otimizando Agendador de Tarefas"
 Optimize-ScheduledTasks
+
+Show-Progress "BCDEDIT Tweaks (Timer, Dynamic Tick)"
 Apply-BCDEdit
+
+Show-Progress "Desativando VBS/Memory Integrity"
 Disable-VBS
+
+Show-Progress "Otimizando Pagefile (Anti-Stutter)"
 Optimize-Pagefile
+
+Show-Progress "Limpando Startup Apps"
 Clean-StartupApps
+
+Show-Progress "Desativando Control Flow Guard"
 Disable-CFG
+
+Show-Progress "Deep OS Tweaks"
 Apply-DeepTweaks
+
+Show-Progress "Tweaks Extremos (Esports)"
 Apply-ExtremeTweaks
+
+Show-Progress "Ultra Debloat (Estilo ISO Modificada)"
 Apply-UltraDebloat
 
+Write-Host ""
+Write-Host "  [██████████████████████████████] 100% CONCLUIDO!" -ForegroundColor Green
 Write-Host ""
 Write-Host "  ╔══════════════════════════════════════════════════╗" -ForegroundColor Red
 Write-Host "  ║   🔥 TODAS AS OTIMIZACOES APLICADAS!            ║" -ForegroundColor Red
 Write-Host "  ║   ⚠  REINICIE O PC AGORA!                      ║" -ForegroundColor Yellow
 Write-Host "  ╚══════════════════════════════════════════════════╝" -ForegroundColor Red
+$Host.UI.RawUI.WindowTitle = "Otimizador v3.0 - CONCLUIDO! Reinicie o PC."
 Write-Host ""
 Write-Host "  Fechando em 10 segundos..." -ForegroundColor DarkGray
 Start-Sleep -Seconds 10
-
-
