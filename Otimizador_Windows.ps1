@@ -1,4 +1,4 @@
-#Requires -RunAsAdministrator
+﻿#Requires -RunAsAdministrator
 <#
 ╔══════════════════════════════════════════════════════════════════════╗
 ║               OTIMIZADOR WINDOWS v2.0 - COMMUNITY EDITION           ║
@@ -166,9 +166,10 @@ function Show-Menu {
     Write-Host "  ║  [S] Limpar Startup Apps                                    ║" -ForegroundColor Yellow
     Write-Host "  ║  [C] Control Flow Guard (Anti-Stutter por jogo)            ║" -ForegroundColor Yellow
     Write-Host "  ║  [D] Deep OS Tweaks (PCI, Timer Res, Core Parking)         ║" -ForegroundColor Yellow
+    Write-Host "  ║  [E] Modo EXTREME (Esports/MSI Mode/TcpAck)                ║" -ForegroundColor Red
     Write-Host "  ║                                                              ║" -ForegroundColor Magenta
     Write-Host "  ║  [A] APLICAR TUDO (Seguras: 2-9)                           ║" -ForegroundColor Green
-    Write-Host "  ║  [X] APLICAR TUDO + AVANCADAS (2-9 + B,V,P,S,D)           ║" -ForegroundColor Red
+    Write-Host "  ║  [X] APLICAR TUDO + AVANCADAS + EXTREME                    ║" -ForegroundColor Red
     Write-Host "  ║  [R] Reverter Alteracoes (Ponto de Restauracao)            ║" -ForegroundColor Yellow
     Write-Host "  ║  [Q] Sair                                                   ║" -ForegroundColor DarkGray
     Write-Host "  ║                                                              ║" -ForegroundColor Magenta
@@ -1127,6 +1128,61 @@ function Apply-DeepTweaks {
 }
 
 # ============================================================
+# EXTREME: ESPORTS TWEAKS (NOVO)
+# ============================================================
+function Apply-ExtremeTweaks {
+    Write-Header "TWEAKS EXTREMOS (ESPORTS)"
+    Write-Info "Fonte: BlurBusters, TechPowerUp, GitHub"
+    Write-Warn "Pode causar instabilidade em sistemas mais antigos."
+    
+    $confirm = Read-Host "  Aplicar Tweaks Extremos? (S/N)"
+    if ($confirm.ToUpper() -ne 'S') {
+        Write-Step 'Cancelado pelo usuario' 'SKIP'
+        return
+    }
+
+    # 1. Agendador de Tarefas Multimidia (SystemProfile)
+    Write-Host ""
+    Write-Host "    🎮 Agendador de Games (SystemProfile):" -ForegroundColor Yellow
+    $sysProfile = 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games'
+    Ensure-RegPath $sysProfile
+    Set-ItemProperty -Path $sysProfile -Name 'GPU Priority' -Value 8 -Type DWord 2>$null
+    Set-ItemProperty -Path $sysProfile -Name 'Priority' -Value 6 -Type DWord 2>$null
+    Set-ItemProperty -Path $sysProfile -Name 'Scheduling Category' -Value 'High' -Type String 2>$null
+    Write-Step 'Prioridade de Processamento para Jogos: ALTA'
+
+    # 2. Desativar Fullscreen Optimizations globalmente
+    Write-Host ""
+    Write-Host "    📺 Fullscreen Optimizations:" -ForegroundColor Yellow
+    $fso = 'HKCU:\System\GameConfigStore'
+    Ensure-RegPath $fso
+    Set-ItemProperty -Path $fso -Name 'GameDVR_FSEBehaviorMode' -Value 2 -Type DWord 2>$null
+    Write-Step 'True Exclusive Fullscreen: FORCADO (Menos input lag)'
+
+    # 3. TCP/IP Latency (TcpAckFrequency)
+    Write-Host ""
+    Write-Host "    🌐 Latencia de Rede (TCP):" -ForegroundColor Yellow
+    $interfaces = Get-ItemProperty 'HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters\Interfaces\*' -ErrorAction SilentlyContinue
+    foreach ($iface in $interfaces) {
+        if ($iface.DhcpIPAddress -or $iface.IPAddress) {
+            Set-ItemProperty -Path $iface.PSPath -Name 'TcpAckFrequency' -Value 1 -Type DWord 2>$null
+            Set-ItemProperty -Path $iface.PSPath -Name 'TCPNoDelay' -Value 1 -Type DWord 2>$null
+        }
+    }
+    Write-Step 'TcpAckFrequency/TCPNoDelay: 1 (Menor Ping)'
+
+    # 4. Desativar Power Throttling
+    Write-Host ""
+    Write-Host "    ⚡ Power Throttling:" -ForegroundColor Yellow
+    $powerThrottling = 'HKLM:\SYSTEM\CurrentControlSet\Control\Power\PowerThrottling'
+    Ensure-RegPath $powerThrottling
+    Set-ItemProperty -Path $powerThrottling -Name 'PowerThrottlingOff' -Value 1 -Type DWord 2>$null
+    Write-Step 'Gerenciamento agressivo de energia: DESATIVADO'
+    
+    Write-Info 'Para MSI Mode, recomendamos baixar o "MSI Utility v3" e configurar manualmente sua GPU.'
+}
+
+# ============================================================
 # APLICAR TUDO (SEGURO)
 # ============================================================
 function Apply-All {
@@ -1178,6 +1234,7 @@ function Apply-Everything {
     Optimize-Pagefile
     Clean-StartupApps
     Apply-DeepTweaks
+    Apply-ExtremeTweaks
 
     Write-Host ""
     Write-Host "  ╔══════════════════════════════════════════════════╗" -ForegroundColor Red
@@ -1210,6 +1267,7 @@ while ($true) {
         "S" { Clean-StartupApps }
         "C" { Disable-CFG }
         "D" { Apply-DeepTweaks }
+        "E" { Apply-ExtremeTweaks }
         "A" { Apply-All }
         "X" { Apply-Everything }
         "R" {
