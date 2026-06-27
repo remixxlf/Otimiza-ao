@@ -648,9 +648,6 @@ function Clean-System {
     Write-Host "    💾 Total liberado: ~$([math]::Round($totalCleaned, 1)) MB" -ForegroundColor Green
 }
 
-# ============================================================
-# 7. OTIMIZACOES DE GPU (EXPANDIDO)
-# ============================================================
 function Optimize-GPU {
     Write-Header "OTIMIZACOES DE GPU"
 
@@ -674,55 +671,92 @@ function Optimize-GPU {
     Write-Step "Multi-Plane Overlay (MPO) desativado"
     Write-Info "Resolve stutters em MUITAS configs (consenso Reddit)"
 
-    # TDR Level ajustado (NOVO - evita "driver stopped responding")
+    # TDR Level ajustado (evita "driver stopped responding")
     Set-ItemProperty -Path $gpuSchd -Name "TdrDelay" -Value 10 -Type DWord 2>$null
     Set-ItemProperty -Path $gpuSchd -Name "TdrDdiDelay" -Value 10 -Type DWord 2>$null
     Write-Step "TDR Delay: 10s (evita falsos 'driver stopped responding')"
 
-    # DXGI
+    # DXGI Timeout
     $dxgi = "HKLM:\SYSTEM\CurrentControlSet\Control\GraphicsDrivers\DCI"
     Ensure-RegPath $dxgi
     Set-ItemProperty -Path $dxgi -Name "Timeout" -Value 7 -Type DWord 2>$null
     Write-Step "DXGI Timeout otimizado"
 
-    # Otimizar DirectX (NOVO)
-    Write-Host ""
-    Write-Host "    🎮 DirectX / Shader:" -ForegroundColor Yellow
+    # Desativar GPU Preemption (Preempcao de GPU)
+    Set-ItemProperty -Path $gpuSchd -Name "DxgkEnablePreemption" -Value 0 -Type DWord 2>$null
+    Write-Step "GPU Preemption: DESATIVADO (Frame timing mais consistente)"
 
-    # Aumentar Shader Cache size (NOVO - Reddit)
+    # Otimizar DirectX (Forcar Flip Model via registro)
+    $dxMode = "HKLM:\SOFTWARE\Microsoft\DirectX"
+    Ensure-RegPath $dxMode
+    Set-ItemProperty -Path $dxMode -Name "D3D12FlipModel" -Value 1 -Type DWord 2>$null
+    Write-Step "DXGI Flip Model: FORCADO (menor latencia em DX11/12)"
+
+    # Otimizacoes por Marca de GPU
     if ($gpu.Name -match "NVIDIA") {
         Write-Host ""
-        Write-Host "    🟢 GPU NVIDIA Detectada:" -ForegroundColor Green
+        Write-Host "    🟢 GPU NVIDIA Detectada - Aplicando Tweaks Especififcos:" -ForegroundColor Green
 
         # NVIDIA Profile tweaks via registro
         $nvProfile = "HKLM:\SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0000"
         if (Test-Path $nvProfile) {
+            # Desativar HDCP Overhead
             Set-ItemProperty -Path $nvProfile -Name "RMHdcpKeyglobZero" -Value 1 -Type DWord 2>$null
             Write-Step "NVIDIA: HDCP overhead reduzido"
+            
+            # Forcar Shader Cache Ilimitado via Registro (4096 = Ilimitado em drivers modernos)
+            Set-ItemProperty -Path $nvProfile -Name "ShaderCacheSize" -Value 4096 -Type DWord 2>$null
+            Write-Step "NVIDIA: Shader Cache setado para ILIMITADO via Registro"
+
+            # Prefer Maximum Performance (PowerManagementMode = 1)
+            Set-ItemProperty -Path $nvProfile -Name "PowerManagementMode" -Value 1 -Type DWord 2>$null
+            Write-Step "NVIDIA: Modo de Energia Máximo Desempenho forçado"
         }
+
+        # Desativar NVIDIA Telemetry (Servicos e Agendador)
+        Stop-Service -Name "NvTelemetryContainer" -Force 2>$null
+        Set-Service -Name "NvTelemetryContainer" -StartupType Disabled 2>$null
+        Get-ScheduledTask -TaskPath "\CcTasks\" -ErrorAction SilentlyContinue | Where-Object {$_.TaskName -match "NvTm"} | Disable-ScheduledTask 2>$null
+        Write-Step "NVIDIA: Servico de Telemetria e Coleta de Dados desativados"
 
         Write-Info ""
         Write-Info "⚡ CONFIGURACOES MANUAIS RECOMENDADAS (NVIDIA Control Panel):"
-        Write-Info "  Power Management Mode: Prefer Maximum Performance"
         Write-Info "  Low Latency Mode: Ultra (reduz input lag)"
         Write-Info "  Texture Filtering Quality: High Performance"
         Write-Info "  Threaded Optimization: On"
-        Write-Info "  Shader Cache Size: Unlimited"
-        Write-Info "  Max Frame Rate: iguale ao Hz do monitor"
         Write-Info "  G-Sync/V-Sync: G-Sync ON + V-Sync ON + FPS cap -3 do Hz"
     }
     elseif ($gpu.Name -match "AMD|Radeon") {
         Write-Host ""
-        Write-Host "    🔴 GPU AMD Detectada:" -ForegroundColor Red
+        Write-Host "    🔴 GPU AMD Detectada - Aplicando Tweaks Especififcos:" -ForegroundColor Red
+
+        # Desativar ULPS (Ultra Low Power State) em todas as chaves de placas AMD
+        $amdDriverPaths = Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\*" -ErrorAction SilentlyContinue
+        $ulpsCount = 0
+        foreach ($path in $amdDriverPaths) {
+            if ($path.EnableUlps -ne $null) {
+                Set-ItemProperty -Path $path.PSPath -Name "EnableUlps" -Value 0 -Type DWord 2>$null
+                $ulpsCount++
+            }
+        }
+        if ($ulpsCount -gt 0) {
+            Write-Step "AMD: ULPS Desativado em $ulpsCount registros (sem quedas de voltagem)"
+        }
+
+        # Desativar AMD Telemetria e Crash Defender
+        Stop-Service -Name "AMDRMService" -Force 2>$null
+        Set-Service -Name "AMDRMService" -StartupType Disabled 2>$null
+        Stop-Service -Name "AmdCrashDefenderService" -Force 2>$null
+        Set-Service -Name "AmdCrashDefenderService" -StartupType Disabled 2>$null
+        Write-Step "AMD: Coleta de Dados e Crash Defender desativados"
+
         Write-Info ""
         Write-Info "⚡ CONFIGURACOES MANUAIS RECOMENDADAS (AMD Software):"
         Write-Info "  Anti-Lag: Ativado (reduz input lag)"
         Write-Info "  Radeon Boost: Ativado (FPS adaptativo)"
-        Write-Info "  Radeon Chill: Desativado (ou limitar FPS)"
         Write-Info "  Surface Format Optimization: Ativado"
         Write-Info "  Tessellation Mode: Override / 8x"
         Write-Info "  GPU Workload: Graphics"
-        Write-Info "  Shader Cache: Reset + Performance"
     }
     elseif ($gpu.Name -match "Intel") {
         Write-Host ""
