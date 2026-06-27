@@ -1016,16 +1016,10 @@ function Disable-CFG {
     Write-Info "  - Unreal Engine 5 games em geral"
 
     Write-Host ""
-    Write-Info "Desativar CFG GLOBALMENTE (nao recomendado, mas possivel):"
-    $confirm = Read-Host "    Desativar CFG global? Reduz seguranca. (S/N)"
-    if ($confirm.ToUpper() -eq "S") {
-        Set-ProcessMitigation -System -Disable CFG 2>$null
-        Write-Step "CFG desativado globalmente"
-        Write-Warn "Para reverter: Set-ProcessMitigation -System -Enable CFG"
-    }
-    else {
-        Write-Step "CFG mantido (recomendado desativar por jogo)" "SKIP"
-    }
+    Write-Info "Desativando CFG GLOBALMENTE automaticamente..."
+    Set-ProcessMitigation -System -Disable CFG 2>$null
+    Write-Step "CFG desativado globalmente"
+    Write-Warn "Para reverter: Set-ProcessMitigation -System -Enable CFG"
 }
 
 # ============================================================
