@@ -64,12 +64,12 @@ function Write-Step {
 
 function Write-Info {
     param([string]$Text)
-    Write-Host "    ℹ $Text" -ForegroundColor DarkGray
+    # Silenciado para manter o terminal limpo
 }
 
 function Write-Warn {
     param([string]$Text)
-    Write-Host "    ⚠ $Text" -ForegroundColor Yellow
+    # Silenciado para manter o terminal limpo
 }
 
 function Ensure-RegPath {
@@ -960,12 +960,6 @@ function Apply-BCDEdit {
     bcdedit /set tscsyncpolicy enhanced 2>$null
     Write-Step "TSC Sync Policy: Enhanced"
     Write-Info "Reverter: bcdedit /deletevalue tscsyncpolicy"
-
-    Write-Host ""
-    Write-Host "    ⚠️ Para reverter TUDO:" -ForegroundColor Red
-    Write-Info "bcdedit /deletevalue disabledynamictick"
-    Write-Info "bcdedit /deletevalue useplatformtick"
-    Write-Info "bcdedit /deletevalue tscsyncpolicy"
 }
 
 # ============================================================
@@ -1112,30 +1106,8 @@ function Disable-CFG {
     Write-Host "    [!] Desativando CFG automaticamente..." -ForegroundColor Green
     Set-ItemProperty -Path "HKLM:\System\CurrentControlSet\Control\Session Manager\kernel" -Name "MitigationOptions" -Value ([byte[]](2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2)) -Type Binary 2>$null
     
-    Write-Host ""
-    Write-Info "Como desativar manualmente para um jogo:"
-    Write-Host ""
-    Write-Host "    1. Abra: Seguranca do Windows" -ForegroundColor White
-    Write-Host "    2. Va em: App & Browser Control" -ForegroundColor White
-    Write-Host "    3. Clique: Exploit Protection Settings" -ForegroundColor White
-    Write-Host "    4. Va na aba: Program Settings" -ForegroundColor White
-    Write-Host "    5. Clique: + Add program to customize" -ForegroundColor White
-    Write-Host "    6. Escolha o .exe do jogo" -ForegroundColor White
-    Write-Host "    7. Desmarque: Control Flow Guard (CFG)" -ForegroundColor White
-    Write-Host ""
-
-    Write-Info "Jogos que se beneficiam (relatos Reddit):"
-    Write-Info "  - Hogwarts Legacy"
-    Write-Info "  - Jedi Survivor"
-    Write-Info "  - Cyberpunk 2077"
-    Write-Info "  - The Last of Us Part I"
-    Write-Info "  - Unreal Engine 5 games em geral"
-
-    Write-Host ""
-    Write-Info "Desativando CFG GLOBALMENTE automaticamente..."
     Set-ProcessMitigation -System -Disable CFG 2>$null
     Write-Step "CFG desativado globalmente"
-    Write-Warn "Para reverter: Set-ProcessMitigation -System -Enable CFG"
 }
 
 # ============================================================
