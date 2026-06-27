@@ -1334,6 +1334,141 @@ function Apply-ExtremeTweaks {
 }
 
 # ============================================================
+# ULTRA DEBLOAT (ESTILO ISO MODIFICADA)
+# ============================================================
+function Apply-UltraDebloat {
+    Write-Header "ULTRA DEBLOAT (ESTILO ISO MODIFICADA)"
+    Write-Info "Fonte: AtlasOS, ReviOS, MSMG Toolkit, Reddit"
+    Write-Warn "Enxuga o Windows ao maximo para performance pura."
+
+    # 1. Desativar Windows Search Indexing
+    Write-Host ""
+    Write-Host "    🔍 Windows Search Indexing:" -ForegroundColor Yellow
+    Stop-Service -Name "WSearch" -Force -ErrorAction SilentlyContinue
+    Set-Service -Name "WSearch" -StartupType Disabled -ErrorAction SilentlyContinue
+    Write-Step "Servico de Indexacao (WSearch): DESATIVADO"
+    Write-Info "Pesquisa do Menu Iniciar ficara um pouco mais lenta, mas menos uso de CPU/disco"
+
+    # 2. Desativar Print Spooler (Impressora)
+    Write-Host ""
+    Write-Host "    🖨️ Print Spooler:" -ForegroundColor Yellow
+    Stop-Service -Name "Spooler" -Force -ErrorAction SilentlyContinue
+    Set-Service -Name "Spooler" -StartupType Disabled -ErrorAction SilentlyContinue
+    Write-Step "Print Spooler: DESATIVADO (nao usa impressora? perfeito)"
+
+    # 3. Desativar Copilot (Win11 24H2+)
+    Write-Host ""
+    Write-Host "    🤖 Microsoft Copilot / Recall / Widgets:" -ForegroundColor Yellow
+    # Copilot
+    $copilotPolicy = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsCopilot"
+    Ensure-RegPath $copilotPolicy
+    Set-ItemProperty -Path $copilotPolicy -Name "TurnOffWindowsCopilot" -Value 1 -Type DWord 2>$null
+    # Recall
+    $recallPolicy = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsAI"
+    Ensure-RegPath $recallPolicy
+    Set-ItemProperty -Path $recallPolicy -Name "DisableAIDataAnalysis" -Value 1 -Type DWord 2>$null
+    # Widgets
+    $widgetPolicy = "HKLM:\SOFTWARE\Policies\Microsoft\Dsh"
+    Ensure-RegPath $widgetPolicy
+    Set-ItemProperty -Path $widgetPolicy -Name "AllowNewsAndInterests" -Value 0 -Type DWord 2>$null
+    Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "TaskbarDa" -Value 0 -Type DWord 2>$null
+    Write-Step "Copilot, Recall e Widgets: DESATIVADOS"
+
+    # 4. Remover Capacidades Extras via DISM
+    Write-Host ""
+    Write-Host "    🧹 Removendo Componentes Extras via DISM..." -ForegroundColor Yellow
+    $capabilities = @(
+        "Microsoft.Windows.WordPad~~~~0.0.1.0",
+        "Microsoft.Windows.StepsRecorder~~~~0.0.1.0",
+        "MathRecognizer~~~~0.0.1.0",
+        "App.Support.QuickAssist~~~~0.0.1.0",
+        "Browser.InternetExplorer~~~~0.0.11.0",
+        "Media.WindowsMediaPlayer~~~~0.0.12.0",
+        "Hello.Face~~~~0.0.1.0",
+        "Microsoft.Windows.PowerShell.ISE~~~~0.0.1.0"
+    )
+    $dismRemoved = 0
+    foreach ($cap in $capabilities) {
+        $installed = Get-WindowsCapability -Online -ErrorAction SilentlyContinue | Where-Object { $_.Name -eq $cap -and $_.State -eq 'Installed' }
+        if ($installed) {
+            Remove-WindowsCapability -Online -Name $cap -ErrorAction SilentlyContinue | Out-Null
+            $shortName = ($cap -split '~~~~')[0] -replace 'Microsoft\.Windows\.', '' -replace 'App\.Support\.', ''
+            Write-Step "$shortName removido via DISM"
+            $dismRemoved++
+        }
+    }
+    if ($dismRemoved -eq 0) {
+        Write-Step "Nenhum componente extra encontrado para remover" "SKIP"
+    } else {
+        Write-Host "    📦 $dismRemoved componente(s) removido(s)" -ForegroundColor Green
+    }
+
+    # 5. CompactOS (Comprime o Sistema Operacional)
+    Write-Host ""
+    Write-Host "    📦 Ativando CompactOS (Compressao do Sistema)..." -ForegroundColor Yellow
+    Write-Info "Comprime arquivos do Windows no disco. Libera 2-4GB sem perder performance em SSDs."
+    compact.exe /CompactOS:always 2>$null | Out-Null
+    Write-Step "CompactOS: ATIVADO (sistema comprimido no disco)"
+
+    # 6. Bloqueio de Telemetria via Hosts
+    Write-Host ""
+    Write-Host "    🌐 Bloqueando Servidores de Telemetria via Hosts..." -ForegroundColor Yellow
+    $hostsPath = "$env:SystemRoot\System32\drivers\etc\hosts"
+    $telemetryDomains = @(
+        "vortex.data.microsoft.com",
+        "vortex-win.data.microsoft.com",
+        "telecommand.telemetry.microsoft.com",
+        "telecommand.telemetry.microsoft.com.nsatc.net",
+        "oca.telemetry.microsoft.com",
+        "oca.telemetry.microsoft.com.nsatc.net",
+        "sqm.telemetry.microsoft.com",
+        "sqm.telemetry.microsoft.com.nsatc.net",
+        "watson.telemetry.microsoft.com",
+        "watson.telemetry.microsoft.com.nsatc.net",
+        "redir.metaservices.microsoft.com",
+        "choice.microsoft.com",
+        "choice.microsoft.com.nsatc.net",
+        "df.telemetry.microsoft.com",
+        "reports.wes.df.telemetry.microsoft.com",
+        "settings-sandbox.data.microsoft.com",
+        "watson.live.com",
+        "watson.microsoft.com",
+        "statsfe2.ws.microsoft.com",
+        "corpext.msitadfs.glbdns2.microsoft.com",
+        "compatexchange.cloudapp.net",
+        "a-0001.a-msedge.net",
+        "statsfe2.update.microsoft.com.akadns.net",
+        "diagnostics.support.microsoft.com"
+    )
+
+    $hostsContent = Get-Content $hostsPath -ErrorAction SilentlyContinue
+    $added = 0
+    $marker = "# === OTIMIZADOR TELEMETRY BLOCK ==="
+    if ($hostsContent -notcontains $marker) {
+        Add-Content -Path $hostsPath -Value "`n$marker" -ErrorAction SilentlyContinue
+        foreach ($domain in $telemetryDomains) {
+            $entry = "0.0.0.0 $domain"
+            if ($hostsContent -notcontains $entry) {
+                Add-Content -Path $hostsPath -Value $entry -ErrorAction SilentlyContinue
+                $added++
+            }
+        }
+        Add-Content -Path $hostsPath -Value "# === END OTIMIZADOR BLOCK ===" -ErrorAction SilentlyContinue
+        Write-Step "$added dominios de telemetria bloqueados no arquivo hosts"
+    } else {
+        Write-Step "Bloqueio de telemetria via hosts ja aplicado" "SKIP"
+    }
+
+    # 7. Desativar Activity History
+    Write-Host ""
+    Write-Host "    📋 Historico de Atividades:" -ForegroundColor Yellow
+    Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\System" -Name "EnableActivityFeed" -Value 0 -Type DWord -ErrorAction SilentlyContinue
+    Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\System" -Name "PublishUserActivities" -Value 0 -Type DWord -ErrorAction SilentlyContinue
+    Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\System" -Name "UploadUserActivities" -Value 0 -Type DWord -ErrorAction SilentlyContinue
+    Write-Step "Activity History: DESATIVADO (Microsoft nao rastreia mais)"
+}
+
+# ============================================================
 # EXECUCAO LINEAR AUTOMATICA
 # ============================================================
 
@@ -1361,6 +1496,7 @@ Clean-StartupApps
 Disable-CFG
 Apply-DeepTweaks
 Apply-ExtremeTweaks
+Apply-UltraDebloat
 
 Write-Host ""
 Write-Host "  ╔══════════════════════════════════════════════════╗" -ForegroundColor Red
@@ -1370,4 +1506,5 @@ Write-Host "  ╚═════════════════════
 Write-Host ""
 Write-Host "  Fechando em 10 segundos..." -ForegroundColor DarkGray
 Start-Sleep -Seconds 10
+
 
