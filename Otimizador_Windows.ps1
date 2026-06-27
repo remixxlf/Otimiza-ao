@@ -133,52 +133,22 @@ function Show-SystemDiag {
 }
 
 # ============================================================
-# MENU PRINCIPAL
+# BANNER INICIAL
 # ============================================================
-function Show-Menu {
+function Show-Banner {
     Clear-Host
     Write-Host ""
     Write-Host "  ╔══════════════════════════════════════════════════════════════╗" -ForegroundColor Magenta
     Write-Host "  ║                                                              ║" -ForegroundColor Magenta
-    Write-Host "  ║         🎮  OTIMIZADOR WINDOWS v2.0  🎮                     ║" -ForegroundColor Magenta
-    Write-Host "  ║            Community Edition - Para Gamers                   ║" -ForegroundColor Magenta
-    Write-Host "  ║   Fontes: Reddit, GitHub, TechPowerUp, Tom's Hardware        ║" -ForegroundColor DarkGray
-    Write-Host "  ║                                                              ║" -ForegroundColor Magenta
-    Write-Host "  ╠══════════════════════════════════════════════════════════════╣" -ForegroundColor Magenta
-    Write-Host "  ║                                                              ║" -ForegroundColor Magenta
-    Write-Host "  ║  [0] Diagnostico do Sistema (veja seu PC)                   ║" -ForegroundColor White
-    Write-Host "  ║  [1] Criar Ponto de Restauracao (FACA PRIMEIRO!)            ║" -ForegroundColor Yellow
-    Write-Host "  ║                                                              ║" -ForegroundColor Magenta
-    Write-Host "  ║  === OTIMIZACAO INTELIGENTE (NOVO) ===                      ║" -ForegroundColor Cyan
-    Write-Host "  ║  [I] Otimizacao Auto-Adaptativa + Limpador 2o Plano (Stealth)║" -ForegroundColor Yellow
-    Write-Host "  ║                                                              ║" -ForegroundColor Magenta
-    Write-Host "  ║  === OTIMIZACOES SEGURAS (Tier A) ===                       ║" -ForegroundColor Green
-    Write-Host "  ║  [2] Plano de Energia Ultimate Performance                  ║" -ForegroundColor Cyan
-    Write-Host "  ║  [3] Desativar Servicos Desnecessarios                      ║" -ForegroundColor Cyan
-    Write-Host "  ║  [4] Tweaks de Registro (Visual, Input Lag, etc)            ║" -ForegroundColor Cyan
-    Write-Host "  ║  [5] Otimizacoes de Rede (Latencia/Ping)                   ║" -ForegroundColor Cyan
-    Write-Host "  ║  [6] Limpeza do Sistema (Temp, Cache, Prefetch)            ║" -ForegroundColor Cyan
-    Write-Host "  ║  [7] Otimizacoes de GPU (NVIDIA / AMD / Intel)             ║" -ForegroundColor Cyan
-    Write-Host "  ║  [8] Desativar Bloatware (Apps pre-instalados)             ║" -ForegroundColor Cyan
-    Write-Host "  ║  [9] Otimizar Agendador de Tarefas                         ║" -ForegroundColor Cyan
-    Write-Host "  ║                                                              ║" -ForegroundColor Magenta
-    Write-Host "  ║  === OTIMIZACOES AVANCADAS (Tier S - Reddit/Foruns) ===     ║" -ForegroundColor Red
-    Write-Host "  ║  [B] BCDEDIT Tweaks (Timer, Dynamic Tick)                   ║" -ForegroundColor Yellow
-    Write-Host "  ║  [V] Desativar VBS/Memory Integrity (+5-15% FPS)           ║" -ForegroundColor Yellow
-    Write-Host "  ║  [P] Otimizar Pagefile (Anti-Stutter)                       ║" -ForegroundColor Yellow
-    Write-Host "  ║  [S] Limpar Startup Apps                                    ║" -ForegroundColor Yellow
-    Write-Host "  ║  [C] Control Flow Guard (Anti-Stutter por jogo)            ║" -ForegroundColor Yellow
-    Write-Host "  ║  [D] Deep OS Tweaks (PCI, Timer Res, Core Parking)         ║" -ForegroundColor Yellow
-    Write-Host "  ║  [E] Modo EXTREME (Esports/MSI Mode/TcpAck)                ║" -ForegroundColor Red
-    Write-Host "  ║                                                              ║" -ForegroundColor Magenta
-    Write-Host "  ║  [A] APLICAR TUDO (Seguras: 2-9)                           ║" -ForegroundColor Green
-    Write-Host "  ║  [X] APLICAR TUDO + AVANCADAS + EXTREME                    ║" -ForegroundColor Red
-    Write-Host "  ║  [R] Reverter Alteracoes (Ponto de Restauracao)            ║" -ForegroundColor Yellow
-    Write-Host "  ║  [Q] Sair                                                   ║" -ForegroundColor DarkGray
+    Write-Host "  ║         🎮  OTIMIZADOR WINDOWS v3.0  🎮                     ║" -ForegroundColor Magenta
+    Write-Host "  ║         Zero-Click Edition - 100% Automático                 ║" -ForegroundColor Magenta
     Write-Host "  ║                                                              ║" -ForegroundColor Magenta
     Write-Host "  ╚══════════════════════════════════════════════════════════════╝" -ForegroundColor Magenta
     Write-Host ""
+    Write-Host "  Iniciando Otimização Extrema Automática em 3 segundos..." -ForegroundColor Yellow
+    Start-Sleep -Seconds 3
 }
+
 
 # ============================================================
 # 1. PONTO DE RESTAURACAO
@@ -875,11 +845,7 @@ function Disable-VBS {
     Write-Warn "Reduz uma camada de seguranca contra malware kernel-level"
 
     Write-Host ""
-    $confirm = Read-Host "    Deseja desativar VBS/Memory Integrity? (S/N)"
-    if ($confirm.ToUpper() -ne "S") {
-        Write-Step "Operacao cancelada pelo usuario" "SKIP"
-        return
-    }
+    Write-Host "    [!] Aplicando desativacao automatica..." -ForegroundColor Green
 
     Write-Host ""
     Write-Host "    🔓 Desativando VBS:" -ForegroundColor Yellow
@@ -935,12 +901,8 @@ function Optimize-Pagefile {
     Write-Info "Pagefile fixo evita que o Windows redimensione durante o jogo"
 
     Write-Host ""
-    $confirm = Read-Host "    Aplicar pagefile fixo de $recommended MB no drive C:? (S/N)"
-    if ($confirm.ToUpper() -ne "S") {
-        Write-Step "Operacao cancelada pelo usuario" "SKIP"
-        return
-    }
-
+    Write-Host "    [!] Fixando Pagefile em $recommended MB no C: automaticamente..." -ForegroundColor Green
+    
     # Desativar gerenciamento automatico
     $cs = Get-WmiObject Win32_ComputerSystem -EnableAllPrivileges
     $cs.AutomaticManagedPagefile = $false
@@ -989,26 +951,11 @@ function Clean-StartupApps {
             $i++
         }
 
-        Write-Host ""
-        Write-Host "    [T] Desativar TUDO" -ForegroundColor Red
-        Write-Host "    [N] Nao desativar nada" -ForegroundColor Green
-        $choice = Read-Host "    Quais desativar? (numeros separados por virgula, T ou N)"
-
-        if ($choice.ToUpper() -eq "T") {
-            foreach ($app in $appList) {
-                Remove-ItemProperty -Path $runKey -Name $app -ErrorAction SilentlyContinue
-                Write-Step "$app removido do startup"
-            }
-        }
-        elseif ($choice.ToUpper() -ne "N") {
-            $indices = $choice -split "," | ForEach-Object { $_.Trim() }
-            foreach ($idx in $indices) {
-                if ([int]$idx -le $appList.Count -and [int]$idx -ge 1) {
-                    $appName = $appList[[int]$idx - 1]
-                    Remove-ItemProperty -Path $runKey -Name $appName -ErrorAction SilentlyContinue
-                    Write-Step "$appName removido do startup"
-                }
-            }
+        Write-Host "    [!] Removendo TODOS os aplicativos de inicializacao automaticamente..." -ForegroundColor Red
+        
+        foreach ($app in $appList) {
+            Remove-ItemProperty -Path $runKey -Name $app -ErrorAction SilentlyContinue
+            Write-Step "$app removido do startup"
         }
     }
     else {
@@ -1028,6 +975,10 @@ function Disable-CFG {
     Write-Info "Fonte: Reddit 2025 - solucao para stutters em jogos especificos"
     Write-Info "CFG e uma protecao de seguranca que causa stutters em alguns jogos"
 
+    Write-Host ""
+    Write-Host "    [!] Desativando CFG automaticamente..." -ForegroundColor Green
+    Set-ItemProperty -Path "HKLM:\System\CurrentControlSet\Control\Session Manager\kernel" -Name "MitigationOptions" -Value ([byte[]](2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2)) -Type Binary 2>$null
+    
     Write-Host ""
     Write-Info "Como desativar manualmente para um jogo:"
     Write-Host ""
@@ -1198,12 +1149,8 @@ function Apply-ExtremeTweaks {
     Write-Info "Fonte: BlurBusters, TechPowerUp, GitHub"
     Write-Warn "Pode causar instabilidade em sistemas mais antigos."
     
-    $confirm = Read-Host "  Aplicar Tweaks Extremos? (S/N)"
-    if ($confirm.ToUpper() -ne 'S') {
-        Write-Step 'Cancelado pelo usuario' 'SKIP'
-        return
-    }
-
+    Write-Host "    [!] Aplicando Tweaks Extremos automaticamente..." -ForegroundColor Red
+    
     # 1. Agendador de Tarefas Multimidia (SystemProfile)
     Write-Host ""
     Write-Host "    🎮 Agendador de Games (SystemProfile):" -ForegroundColor Yellow
@@ -1246,114 +1193,40 @@ function Apply-ExtremeTweaks {
 }
 
 # ============================================================
-# APLICAR TUDO (SEGURO)
+# EXECUCAO LINEAR AUTOMATICA
 # ============================================================
-function Apply-All {
-    Write-Host ""
-    Write-Host "  ⚡ APLICANDO OTIMIZACOES SEGURAS (Tier A)..." -ForegroundColor Green
-    Write-Host ""
 
-    Optimize-PowerPlan
-    Disable-UnnecessaryServices
-    Apply-RegistryTweaks
-    Optimize-Network
-    Clean-System
-    Optimize-GPU
-    Remove-Bloatware
-    Optimize-ScheduledTasks
+Show-Banner
+Show-SystemDiag
+Create-RestorePoint
+Apply-IntelligentTweaks
 
-    Write-Host ""
-    Write-Host "  ╔══════════════════════════════════════════════════╗" -ForegroundColor Green
-    Write-Host "  ║   ✅ OTIMIZACOES SEGURAS APLICADAS!             ║" -ForegroundColor Green
-    Write-Host "  ║   ⚠  Reinicie o computador para aplicar tudo.  ║" -ForegroundColor Yellow
-    Write-Host "  ╚══════════════════════════════════════════════════╝" -ForegroundColor Green
-}
+Write-Host ""
+Write-Host "  🔥 APLICANDO TODAS AS OTIMIZACOES (SEGURAS + AVANCADAS + EXTREMAS)..." -ForegroundColor Red
+Write-Host ""
 
-# ============================================================
-# APLICAR TUDO + AVANCADO
-# ============================================================
-function Apply-Everything {
-    Write-Host ""
-    Write-Host "  🔥 APLICANDO TODAS AS OTIMIZACOES (SEGURAS + AVANCADAS)..." -ForegroundColor Red
-    Write-Warn "Inclui tweaks avancados que podem afetar seguranca/estabilidade"
-    Write-Host ""
+Optimize-PowerPlan
+Disable-UnnecessaryServices
+Apply-RegistryTweaks
+Optimize-Network
+Clean-System
+Optimize-GPU
+Remove-Bloatware
+Optimize-ScheduledTasks
+Apply-BCDEdit
+Disable-VBS
+Optimize-Pagefile
+Clean-StartupApps
+Disable-CFG
+Apply-DeepTweaks
+Apply-ExtremeTweaks
 
-    $confirm = Read-Host "  Tem certeza? Criou ponto de restauracao? (S/N)"
-    if ($confirm.ToUpper() -ne "S") {
-        Write-Step "Cancelado" "SKIP"
-        return
-    }
-
-    Optimize-PowerPlan
-    Disable-UnnecessaryServices
-    Apply-RegistryTweaks
-    Optimize-Network
-    Clean-System
-    Optimize-GPU
-    Remove-Bloatware
-    Optimize-ScheduledTasks
-    Apply-BCDEdit
-    Disable-VBS
-    Optimize-Pagefile
-    Clean-StartupApps
-    Apply-DeepTweaks
-    Apply-ExtremeTweaks
-
-    Write-Host ""
-    Write-Host "  ╔══════════════════════════════════════════════════╗" -ForegroundColor Red
-    Write-Host "  ║   🔥 TODAS AS OTIMIZACOES APLICADAS!            ║" -ForegroundColor Red
-    Write-Host "  ║   ⚠  REINICIE O PC AGORA!                      ║" -ForegroundColor Yellow
-    Write-Host "  ╚══════════════════════════════════════════════════╝" -ForegroundColor Red
-}
-
-# ============================================================
-# LOOP PRINCIPAL
-# ============================================================
-while ($true) {
-    Show-Menu
-    $choice = Read-Host "  Escolha uma opcao"
-
-    switch ($choice.ToUpper()) {
-        "0" { Show-SystemDiag }
-        "I" { Apply-IntelligentTweaks }
-        "1" { Create-RestorePoint }
-        "2" { Optimize-PowerPlan }
-        "3" { Disable-UnnecessaryServices }
-        "4" { Apply-RegistryTweaks }
-        "5" { Optimize-Network }
-        "6" { Clean-System }
-        "7" { Optimize-GPU }
-        "8" { Remove-Bloatware }
-        "9" { Optimize-ScheduledTasks }
-        "B" { Apply-BCDEdit }
-        "V" { Disable-VBS }
-        "P" { Optimize-Pagefile }
-        "S" { Clean-StartupApps }
-        "C" { Disable-CFG }
-        "D" { Apply-DeepTweaks }
-        "E" { Apply-ExtremeTweaks }
-        "A" { Apply-All }
-        "X" { Apply-Everything }
-        "R" {
-            Write-Header "REVERTER ALTERACOES"
-            Write-Info "Abrindo Restauracao do Sistema..."
-            rstrui.exe
-        }
-        "Q" {
-            Write-Host ""
-            Write-Host "  Ate mais! Reinicie o PC para aplicar as mudancas." -ForegroundColor Cyan
-            Write-Host "  Lembre de verificar as configs manuais da GPU!" -ForegroundColor DarkGray
-            return
-        }
-        default {
-            Write-Host "  Opcao invalida!" -ForegroundColor Red
-        }
-    }
-
-    if ($choice.ToUpper() -ne "Q") {
-        Write-Host ""
-        Write-Host "  Pressione ENTER para voltar ao menu..." -ForegroundColor DarkGray
-        Read-Host
-    }
-}
+Write-Host ""
+Write-Host "  ╔══════════════════════════════════════════════════╗" -ForegroundColor Red
+Write-Host "  ║   🔥 TODAS AS OTIMIZACOES APLICADAS!            ║" -ForegroundColor Red
+Write-Host "  ║   ⚠  REINICIE O PC AGORA!                      ║" -ForegroundColor Yellow
+Write-Host "  ╚══════════════════════════════════════════════════╝" -ForegroundColor Red
+Write-Host ""
+Write-Host "  Fechando em 10 segundos..." -ForegroundColor DarkGray
+Start-Sleep -Seconds 10
 
