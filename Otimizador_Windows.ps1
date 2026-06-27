@@ -133,19 +133,23 @@ function Show-SystemDiag {
 }
 
 # ============================================================
-# BANNER INICIAL
+# BANNER INICIAL COM ARTE ASCII
 # ============================================================
 function Show-Banner {
     Clear-Host
     Write-Host ""
-    Write-Host "  ╔══════════════════════════════════════════════════════════════╗" -ForegroundColor Magenta
-    Write-Host "  ║                                                              ║" -ForegroundColor Magenta
-    Write-Host "  ║         🎮  OTIMIZADOR WINDOWS v3.0  🎮                     ║" -ForegroundColor Magenta
-    Write-Host "  ║         Zero-Click Edition - 100% Automático                 ║" -ForegroundColor Magenta
-    Write-Host "  ║                                                              ║" -ForegroundColor Magenta
-    Write-Host "  ╚══════════════════════════════════════════════════════════════╝" -ForegroundColor Magenta
+    Write-Host "   ██████╗ ████████╗██╗███╗   ███╗██╗███████╗ █████╗ " -ForegroundColor Cyan
+    Write-Host "  ██╔═══██╗╚══██╔══╝██║████╗ ████║██║██╔════╝██╔══██╗" -ForegroundColor Cyan
+    Write-Host "  ██║   ██║   ██║   ██║██╔████╔██║██║█████╗  ███████║" -ForegroundColor Cyan
+    Write-Host "  ██║   ██║   ██║   ██║██║╚██╔╝██║██║██╔══╝  ██╔══██║" -ForegroundColor DarkCyan
+    Write-Host "  ╚██████╔╝   ██║   ██║██║ ╚═╝ ██║██║███████╗██║  ██║" -ForegroundColor DarkCyan
+    Write-Host "   ╚═════╝    ╚═╝   ╚═╝╚═╝     ╚═╝╚═╝╚══════╝╚═╝  ╚═╝" -ForegroundColor DarkGray
     Write-Host ""
-    Write-Host "  Iniciando Otimização Extrema Automática em 3 segundos..." -ForegroundColor Yellow
+    Write-Host "  ========================================================" -ForegroundColor Magenta
+    Write-Host "          ⚡ OTIMIZADOR ZERO-CLICK (v3.0) ⚡            " -ForegroundColor Yellow
+    Write-Host "  ========================================================" -ForegroundColor Magenta
+    Write-Host ""
+    Write-Host "  Iniciando Otimizacao Extrema Automatica em 3 segundos..." -ForegroundColor Red
     Start-Sleep -Seconds 3
 }
 
