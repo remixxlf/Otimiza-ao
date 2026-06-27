@@ -1365,13 +1365,12 @@ function Apply-UltraDebloat {
     Write-Info "Fonte: AtlasOS, ReviOS, MSMG Toolkit, Reddit"
     Write-Warn "Enxuga o Windows ao maximo para performance pura."
 
-    # 1. Desativar Windows Search Indexing
+    # 1. Otimizar Windows Search (Mantido ativo offline para nao quebrar a busca de apps)
     Write-Host ""
-    Write-Host "    🔍 Windows Search Indexing:" -ForegroundColor Yellow
-    Stop-Service -Name "WSearch" -Force -ErrorAction SilentlyContinue
-    Set-Service -Name "WSearch" -StartupType Disabled -ErrorAction SilentlyContinue
-    Write-Step "Servico de Indexacao (WSearch): DESATIVADO"
-    Write-Info "Pesquisa do Menu Iniciar ficara um pouco mais lenta, mas menos uso de CPU/disco"
+    Write-Host "    🔍 Windows Search:" -ForegroundColor Yellow
+    Set-Service -Name "WSearch" -StartupType Automatic -ErrorAction SilentlyContinue
+    Start-Service -Name "WSearch" -ErrorAction SilentlyContinue
+    Write-Step "Pesquisa do Windows: OTIMIZADA (Busca Local Ativa / Web OFF)"
 
     # 2. Desativar Print Spooler (Impressora)
     Write-Host ""
