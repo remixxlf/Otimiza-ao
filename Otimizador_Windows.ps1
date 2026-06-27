@@ -155,19 +155,32 @@ function Show-Banner {
 
 
 # ============================================================
-# 1. PONTO DE RESTAURACAO
+# ============================================================
+# 1. PONTO DE RESTAURACAO (FORCADO)
 # ============================================================
 function Create-RestorePoint {
     Write-Header "CRIANDO PONTO DE RESTAURACAO"
-    Write-Info "Isso permite reverter TODAS as mudancas se algo der errado."
+    Write-Info "Tentando forcar a ativacao e criacao do ponto (Bypass 24h Limit)..."
 
     try {
-        Enable-ComputerRestore -Drive "C:\" 2>$null
-        Checkpoint-Computer -Description "Antes_Otimizacao_v2_$(Get-Date -Format 'yyyyMMdd_HHmmss')" -RestorePointType "MODIFY_SETTINGS"
-        Write-Step "Ponto de restauracao criado com sucesso!"
+        # Garantir que o servico VSS esteja rodando
+        Start-Service -Name "VSS" -ErrorAction SilentlyContinue | Out-Null
+        
+        # Forcar ativacao no Registro e remover limite de 24h
+        $srKey = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\SystemRestore"
+        if (-not (Test-Path $srKey)) { New-Item -Path $srKey -Force | Out-Null }
+        Set-ItemProperty -Path $srKey -Name "SystemRestorePointCreationFrequency" -Value 0 -Type DWord -Force -ErrorAction SilentlyContinue
+        
+        # Habilitar no drive C:
+        Enable-ComputerRestore -Drive "C:\" -ErrorAction SilentlyContinue | Out-Null
+        
+        # Criar o Ponto de Fato
+        Checkpoint-Computer -Description "Antes_Otimizacao_v3_$(Get-Date -Format 'yyyyMMdd_HHmmss')" -RestorePointType "MODIFY_SETTINGS" -ErrorAction Stop
+        Write-Step "Ponto de restauracao FORCADO com sucesso!"
     }
     catch {
-        Write-Step "Erro ao criar ponto de restauracao: $($_.Exception.Message)" "ERRO"
+        Write-Step "Erro ao forcar ponto de restauracao: $($_.Exception.Message)" "ERRO"
+        Write-Info "O Windows pode ter bloqueado o System Restore na raiz."
     }
 }
 
