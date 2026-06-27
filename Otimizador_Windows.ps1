@@ -25,6 +25,14 @@ FONTES:
 $Host.UI.RawUI.WindowTitle = "Otimizador Windows v3.0 - Zero-Click Edition"
 $ErrorActionPreference = "SilentlyContinue"
 
+# Inicializar arquivo de log temporario
+$script:logFile = "$env:TEMP\Relatorio_Otimizacao.txt"
+"=============================================" | Out-File -FilePath $script:logFile -Encoding UTF8
+"   RELATORIO DE OTIMIZACAO - ZERO-CLICK v3.0  " | Out-File -FilePath $script:logFile -Append -Encoding UTF8
+"   Data: $(Get-Date -Format 'dd/MM/yyyy HH:mm:ss')" | Out-File -FilePath $script:logFile -Append -Encoding UTF8
+"=============================================" | Out-File -FilePath $script:logFile -Append -Encoding UTF8
+"" | Out-File -FilePath $script:logFile -Append -Encoding UTF8
+
 # Variaveis globais de progresso
 $script:totalSteps = 19
 $script:currentStep = 0
@@ -52,6 +60,10 @@ function Write-Header {
     Write-Host (" " * [Math]::Max($padding, 0)) -NoNewline
     Write-Host "║" -ForegroundColor Cyan
     Write-Host "  ╚══════════════════════════════════════════════════╝" -ForegroundColor Cyan
+    
+    # Salvar no log
+    "" | Out-File -FilePath $script:logFile -Append -Encoding UTF8
+    "--- $Text ---" | Out-File -FilePath $script:logFile -Append -Encoding UTF8
 }
 
 function Write-Step {
@@ -60,6 +72,9 @@ function Write-Step {
     Write-Host "    [" -NoNewline
     Write-Host $Status -ForegroundColor $color -NoNewline
     Write-Host "] $Text"
+    
+    # Salvar no log
+    "[$Status] $Text" | Out-File -FilePath $script:logFile -Append -Encoding UTF8
 }
 
 function Write-Info {
@@ -1566,6 +1581,10 @@ Write-Host "  ║   🔥 TODAS AS OTIMIZACOES APLICADAS!            ║" -Foregr
 Write-Host "  ║   ⚠  REINICIE O PC AGORA!                      ║" -ForegroundColor Yellow
 Write-Host "  ╚══════════════════════════════════════════════════╝" -ForegroundColor Red
 $Host.UI.RawUI.WindowTitle = "Otimizador v3.0 - CONCLUIDO! Reinicie o PC."
+
+# Abrir Relatorio no Bloco de Notas (Notepad)
+Start-Process notepad.exe -ArgumentList $script:logFile
+
 Write-Host ""
 Write-Host "  Fechando em 10 segundos..." -ForegroundColor DarkGray
 Start-Sleep -Seconds 10
