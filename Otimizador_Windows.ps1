@@ -1,4 +1,4 @@
-﻿#Requires -RunAsAdministrator
+#Requires -RunAsAdministrator
 <#
 ╔══════════════════════════════════════════════════════════════════════╗
 ║               OTIMIZADOR WINDOWS v2.0 - COMMUNITY EDITION           ║
@@ -273,7 +273,6 @@ function Disable-UnnecessaryServices {
 
         # Performance (consomem recursos sem necessidade gaming)
         @{ Name = 'SysMain';                    Desc = 'Superfetch - pre-carrega apps, usa RAM/disco' },
-        @{ Name = 'WSearch';                    Desc = 'Windows Search Indexer - usa disco 24/7' },
 
         # Bloat / inuteis
         @{ Name = "MapsBroker";                 Desc = "Gerenciador de mapas baixados" },
