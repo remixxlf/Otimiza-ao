@@ -75,10 +75,25 @@ function Show-SystemDiag {
     Write-Host "    💾 RAM: " -NoNewline -ForegroundColor Yellow
     Write-Host "$ram GB"
 
-    # GPU
-    $gpus = Get-WmiObject Win32_VideoController | Where-Object { $_.Status -eq "OK" }
+    # GPU (filtra adaptadores virtuais e basicos)
+    $gpus = Get-WmiObject Win32_VideoController | Where-Object {
+        $_.Status -eq 'OK' -and
+        $_.Name -notmatch 'Parsec|Virtual|Basic|Microsoft|Remote'
+    }
+    if (-not $gpus) {
+        $gpus = Get-WmiObject Win32_VideoController | Where-Object { $_.Status -eq 'OK' }
+    }
     foreach ($g in $gpus) {
-        $vram = [math]::Round($g.AdapterRAM / 1GB, 1)
+        # Buscar VRAM real via registro (64-bit) - corrige o bug de 4GB do WMI
+        $vram = 0
+        $regAdapters = Get-ItemProperty 'HKLM:\SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0*' -ErrorAction SilentlyContinue
+        foreach ($ra in $regAdapters) {
+            if ($ra.DriverDesc -eq $g.Name -and $ra.'HardwareInformation.qwMemorySize') {
+                $vram = [math]::Round([uint64]$ra.'HardwareInformation.qwMemorySize' / 1GB, 0)
+                break
+            }
+        }
+        if ($vram -eq 0) { $vram = [math]::Round($g.AdapterRAM / 1GB, 0) }
         Write-Host "    🎮 GPU: " -NoNewline -ForegroundColor Yellow
         Write-Host "$($g.Name) ($vram GB VRAM)"
     }
@@ -101,10 +116,13 @@ function Show-SystemDiag {
     Write-Host "    ⚡ Plano: " -NoNewline -ForegroundColor Yellow
     Write-Host "$activePlan"
 
-    # Monitor refresh rate
-    $monitor = Get-WmiObject Win32_VideoController | Select-Object -First 1
+    # Monitor refresh rate (usa a GPU real, nao virtual)
+    $realMonitor = Get-WmiObject Win32_VideoController | Where-Object {
+        $_.Status -eq 'OK' -and $_.Name -notmatch 'Parsec|Virtual|Basic|Microsoft|Remote'
+    } | Select-Object -First 1
+    if (-not $realMonitor) { $realMonitor = Get-WmiObject Win32_VideoController | Select-Object -First 1 }
     Write-Host "    🖥️ Refresh: " -NoNewline -ForegroundColor Yellow
-    Write-Host "$($monitor.CurrentRefreshRate) Hz"
+    Write-Host "$($realMonitor.CurrentRefreshRate) Hz"
 
     # VBS Status
     $vbs = Get-CimInstance -ClassName Win32_DeviceGuard -Namespace root\Microsoft\Windows\DeviceGuard -ErrorAction SilentlyContinue
@@ -610,7 +628,10 @@ function Clean-System {
 function Optimize-GPU {
     Write-Header "OTIMIZACOES DE GPU"
 
-    $gpu = Get-WmiObject Win32_VideoController | Where-Object { $_.Status -eq "OK" } | Select-Object -First 1
+    $gpu = Get-WmiObject Win32_VideoController | Where-Object {
+        $_.Status -eq 'OK' -and $_.Name -notmatch 'Parsec|Virtual|Basic|Microsoft|Remote'
+    } | Select-Object -First 1
+    if (-not $gpu) { $gpu = Get-WmiObject Win32_VideoController | Where-Object { $_.Status -eq 'OK' } | Select-Object -First 1 }
     Write-Info "GPU detectada: $($gpu.Name)"
 
     Write-Host ""
@@ -1102,7 +1123,10 @@ function Apply-IntelligentTweaks {
     $ramInfo = Get-CimInstance Win32_ComputerSystem
     $ramGB = [math]::Round($ramInfo.TotalPhysicalMemory / 1GB, 0)
     $cpuInfo = Get-CimInstance Win32_Processor
-    $gpuInfo = Get-CimInstance Win32_VideoController | Select-Object -First 1
+    $gpuInfo = Get-CimInstance Win32_VideoController | Where-Object {
+        $_.Name -notmatch 'Parsec|Virtual|Basic|Microsoft|Remote'
+    } | Select-Object -First 1
+    if (-not $gpuInfo) { $gpuInfo = Get-CimInstance Win32_VideoController | Select-Object -First 1 }
 
     Write-Host ""
     Write-Host "    🔍 Hardware Detectado:" -ForegroundColor Cyan
