@@ -619,6 +619,13 @@ function Clean-System {
     Clear-RecycleBin -Force -ErrorAction SilentlyContinue
     Write-Step "Lixeira esvaziada"
 
+    # Limpeza da pasta WinSxS (Bypass/Component Store Cleanup - Estilo ISO)
+    Write-Host ""
+    Write-Host "    📦 Limpando Base de Componentes do Windows (WinSxS)..." -ForegroundColor Yellow
+    Write-Info "Isso pode levar de 1 a 3 minutos, mas libera muito espaco em disco."
+    dism.exe /online /Cleanup-Image /StartComponentCleanup /NoRestart | Out-Null
+    Write-Step "Limpeza da pasta WinSxS (Store Cleanup) concluida"
+
     Write-Host ""
     Write-Host "    💾 Total liberado: ~$([math]::Round($totalCleaned, 1)) MB" -ForegroundColor Green
 }
@@ -713,10 +720,45 @@ function Optimize-GPU {
 # 8. REMOVER BLOATWARE (EXPANDIDO)
 # ============================================================
 function Remove-Bloatware {
-    Write-Header "REMOVENDO BLOATWARE"
-    Write-Info "Fonte: Reddit, Win11Debloat by Raphire"
+    Write-Header "REMOVENDO BLOATWARE (DEBLOAT ESTILO ISO)"
+    Write-Info "Fonte: Reddit, Win11Debloat by Raphire, MSMG Toolkit"
     Write-Info 'Apps essenciais - Store, Fotos, Calculadora, Terminal - mantidos.'
 
+    # 1. Desinstalar OneDrive fisicamente
+    Write-Host ""
+    Write-Host "    ☁️ Desinstalando Microsoft OneDrive..." -ForegroundColor Yellow
+    Stop-Process -Name "OneDrive" -ErrorAction SilentlyContinue
+    $oneDriveSetup32 = "$env:SystemRoot\System32\OneDriveSetup.exe"
+    $oneDriveSetup64 = "$env:SystemRoot\SysWOW64\OneDriveSetup.exe"
+    if (Test-Path $oneDriveSetup64) {
+        Start-Process $oneDriveSetup64 -ArgumentList "/uninstall" -Wait -NoNewWindow -ErrorAction SilentlyContinue
+    }
+    elseif (Test-Path $oneDriveSetup32) {
+        Start-Process $oneDriveSetup32 -ArgumentList "/uninstall" -Wait -NoNewWindow -ErrorAction SilentlyContinue
+    }
+    # Remover pastas residuais
+    Remove-Item "$env:USERPROFILE\OneDrive" -Recurse -Force -ErrorAction SilentlyContinue
+    Remove-Item "$env:LOCALAPPDATA\Microsoft\OneDrive" -Recurse -Force -ErrorAction SilentlyContinue
+    Remove-Item "$env:PROGRAMDATA\Microsoft OneDrive" -Recurse -Force -ErrorAction SilentlyContinue
+    Write-Step "OneDrive completamente removido do sistema"
+
+    # 2. Desativar Recursos Opcionais Inuteis (Estilo ISO Lite)
+    Write-Host ""
+    Write-Host "    🧩 Desativando Recursos de Sistema Inuteis..." -ForegroundColor Yellow
+    $features = @(
+        "FaxServicesClient", 
+        "Xps.Viewer~~0.0.1.0", 
+        "Printing-XPSServices-Features", 
+        "WorkFolders-Client"
+    )
+    foreach ($f in $features) {
+        Disable-WindowsOptionalFeature -Online -FeatureName $f -NoRestart -ErrorAction SilentlyContinue | Out-Null
+    }
+    Write-Step "Recursos (Fax, XPS, WorkFolders) desativados"
+
+    # 3. Remover Apps UWP Inuteis
+    Write-Host ""
+    Write-Host "    📱 Desinstalando Aplicativos Pre-instalados..." -ForegroundColor Yellow
     $bloatware = @(
         # Microsoft
         "Microsoft.3DBuilder",
@@ -785,11 +827,11 @@ function Remove-Bloatware {
     }
 
     if ($removed -eq 0) {
-        Write-Step "Nenhum bloatware encontrado" "SKIP"
+        Write-Step "Nenhum aplicativo UWP inútil pendente encontrado" "SKIP"
     }
     else {
         Write-Host ""
-        Write-Host "    🗑️ $removed apps removidos!" -ForegroundColor Green
+        Write-Host "    🗑️ $removed aplicativos de fabrica desinstalados!" -ForegroundColor Green
     }
 }
 
