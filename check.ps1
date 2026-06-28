@@ -1,4 +1,4 @@
-$content = Get-Content 'C:\Users\Filipe\Downloads\otimizador\Otimizador_Windows.ps1' -Raw
+$content = Get-Content '.\Otimizador_Windows.ps1' -Raw
 $tokens = $null
 $errors = $null
 [System.Management.Automation.PSParser]::Tokenize($content, [ref]$errors) | Out-Null

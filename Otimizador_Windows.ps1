@@ -215,24 +215,37 @@ function Create-RestorePoint {
     Write-Info "Tentando forcar a ativacao e criacao do ponto (Bypass 24h Limit)..."
 
     try {
-        # Garantir que o servico VSS esteja rodando
+        # 1. Garantir que os servicos de backup/sombra estejam ativos e rodando
         Start-Service -Name "VSS" -ErrorAction SilentlyContinue | Out-Null
+        Start-Service -Name "swprv" -ErrorAction SilentlyContinue | Out-Null
         
-        # Forcar ativacao no Registro e remover limite de 24h
+        # 2. Desbloquear Politicas de Grupo (Group Policies) que desativam o System Restore
+        $policySR = "HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\SystemRestore"
+        if (Test-Path $policySR) {
+            Remove-ItemProperty -Path $policySR -Name "DisableSR" -Force -ErrorAction SilentlyContinue
+            Remove-ItemProperty -Path $policySR -Name "DisableConfig" -Force -ErrorAction SilentlyContinue
+        }
+
+        # 3. Forcar ativacao no Registro Geral e remover limite de frequencia
         $srKey = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\SystemRestore"
         if (-not (Test-Path $srKey)) { New-Item -Path $srKey -Force | Out-Null }
+        Set-ItemProperty -Path $srKey -Name "DisableSR" -Value 0 -Type DWord -Force -ErrorAction SilentlyContinue
         Set-ItemProperty -Path $srKey -Name "SystemRestorePointCreationFrequency" -Value 0 -Type DWord -Force -ErrorAction SilentlyContinue
         
-        # Habilitar no drive C:
+        # 4. Habilitar no drive C:
         Enable-ComputerRestore -Drive "C:\" -ErrorAction SilentlyContinue | Out-Null
+
+        # 5. Garantir que ha espaco alocado para as sombras (VSS) no drive C: (minimo 5%)
+        # Laptops novos costumam vir com espaco zerado (desativado de fabrica)
+        vssadmin.exe Resize ShadowStorage /For=C: /On=C: /MaxSize=5% 2>$null | Out-Null
         
-        # Criar o Ponto de Fato
+        # 6. Criar o Ponto de Fato
         Checkpoint-Computer -Description "Antes_Otimizacao_v3_$(Get-Date -Format 'yyyyMMdd_HHmmss')" -RestorePointType "MODIFY_SETTINGS" -ErrorAction Stop
         Write-Step "Ponto de restauracao FORCADO com sucesso!"
     }
     catch {
         Write-Step "Erro ao forcar ponto de restauracao: $($_.Exception.Message)" "ERRO"
-        Write-Info "O Windows pode ter bloqueado o System Restore na raiz."
+        Write-Info "Dica: Verifique se o notebook tem espaco em disco ou se o Windows Defender/Politica de TI bloqueou."
     }
 }
 
