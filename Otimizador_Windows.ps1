@@ -870,8 +870,6 @@ function Remove-Bloatware {
         "Microsoft.Todos",
         "MicrosoftCorporationII.QuickAssist",
         "Microsoft.WindowsCommunicationsApps",  # Mail e Calendar
-        "MicrosoftTeams",
-        "MSTeams",
 
         # Jogos/Lixo de terceiros
         "king.com.BubbleWitch3Saga",
