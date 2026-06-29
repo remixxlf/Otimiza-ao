@@ -679,10 +679,13 @@ function Clean-System {
 function Optimize-GPU {
     Write-Header "OTIMIZACOES DE GPU"
 
-    $gpu = Get-WmiObject Win32_VideoController | Where-Object {
-        $_.Status -eq 'OK' -and $_.Name -notmatch 'Parsec|Virtual|Basic|Microsoft|Remote'
-    } | Select-Object -First 1
-    if (-not $gpu) { $gpu = Get-WmiObject Win32_VideoController | Where-Object { $_.Status -eq 'OK' } | Select-Object -First 1 }
+    $gpu = Get-WmiObject Win32_VideoController | Where-Object { $_.PNPDeviceID -match "^PCI" } | Select-Object -First 1
+    if (-not $gpu) {
+        $gpu = Get-WmiObject Win32_VideoController | Where-Object { $_.Status -eq 'OK' -and $_.Name -notmatch 'Parsec|Virtual|Basic|Microsoft|Remote' } | Select-Object -First 1
+    }
+    if (-not $gpu) { 
+        $gpu = Get-WmiObject Win32_VideoController | Select-Object -First 1 
+    }
     Write-Info "GPU detectada: $($gpu.Name)"
 
     Write-Host ""
