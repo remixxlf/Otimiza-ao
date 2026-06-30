@@ -34,7 +34,7 @@ $script:logFile = "$env:TEMP\Relatorio_Otimizacao.txt"
 "" | Out-File -FilePath $script:logFile -Append -Encoding UTF8
 
 # Variaveis globais de progresso
-$script:totalSteps = 19
+$script:totalSteps = 20
 $script:currentStep = 0
 
 function Show-Progress {
@@ -716,8 +716,12 @@ function Optimize-Network {
         Set-NetAdapterAdvancedProperty -Name $adapter.Name -DisplayName "Green Ethernet" -DisplayValue "Disabled" -ErrorAction SilentlyContinue
         # Desativar Power Saving
         Set-NetAdapterAdvancedProperty -Name $adapter.Name -DisplayName "Power Saving Mode" -DisplayValue "Disabled" -ErrorAction SilentlyContinue
+        # Desativar Interrupt Moderation (Anti-Bufferbloat)
+        Set-NetAdapterAdvancedProperty -Name $adapter.Name -DisplayName "Interrupt Moderation" -DisplayValue "Disabled" -ErrorAction SilentlyContinue
+        # Desativar Large Send Offload
+        Set-NetAdapterAdvancedProperty -Name $adapter.Name -DisplayName "Large Send Offload*" -DisplayValue "Disabled" -ErrorAction SilentlyContinue
 
-        Write-Step "Adapter '$($adapter.Name)': Flow Control/EEE/Power Saving OFF"
+        Write-Step "Adapter '$($adapter.Name)': Flow Control/EEE/Power Saving/Interrupt Mod/LSO OFF"
     }
 
     # Desativar QoS packet scheduler weight (NOVO)
@@ -1125,6 +1129,55 @@ function Optimize-ScheduledTasks {
 }
 
 # ============================================================
+# AVANCADO: INTERRUPCOES (MSI MODE & PRIORIDADE)
+# ============================================================
+function Optimize-Interrupts {
+    Write-Header "OTIMIZANDO INTERRUPCOES (MSI MODE & PRIORIDADE)"
+    Write-Info "Forca a GPU e USB a usarem MSI (Message Signaled Interrupts) em vez de IRQs compartilhadas."
+    Write-Info "Define a prioridade de interrupcao da GPU como High."
+    
+    $pciEnum = "HKLM:\SYSTEM\CurrentControlSet\Enum\PCI"
+    $devices = Get-ChildItem -Path $pciEnum -Recurse -ErrorAction SilentlyContinue | Where-Object { $_.Name -match "Device Parameters" }
+    
+    $msiCount = 0
+    foreach ($dev in $devices) {
+        $classDesc = ""
+        $deviceDesc = ""
+        
+        # Tentar pegar a descricao do dispositivo no pai (2 niveis acima)
+        try {
+            $parent = Split-Path (Split-Path $dev.PSPath)
+            $classDesc = (Get-ItemProperty $parent -Name "Class" -ErrorAction SilentlyContinue).Class
+            $deviceDesc = (Get-ItemProperty $parent -Name "DeviceDesc" -ErrorAction SilentlyContinue).DeviceDesc
+        } catch {}
+
+        if ($classDesc -match "Display|USB" -or $deviceDesc -match "Display|USB|VGA|NVIDIA|AMD|Radeon|Intel") {
+            $intManag = "$($dev.PSPath)\Interrupt Management"
+            Ensure-RegPath $intManag
+            
+            # MessageSignaledInterruptProperties
+            $msiProp = "$intManag\MessageSignaledInterruptProperties"
+            Ensure-RegPath $msiProp
+            Set-ItemProperty -Path $msiProp -Name "MSISupported" -Value 1 -Type DWord -ErrorAction SilentlyContinue
+            
+            # Affinity Policy (Device Priority)
+            $affPolicy = "$intManag\Affinity Policy"
+            Ensure-RegPath $affPolicy
+            
+            # 3 = High, 2 = Normal
+            $priority = if ($classDesc -match "Display" -or $deviceDesc -match "Display|VGA|NVIDIA|AMD") { 3 } else { 2 }
+            Set-ItemProperty -Path $affPolicy -Name "DevicePriority" -Value $priority -Type DWord -ErrorAction SilentlyContinue
+            
+            $msiCount++
+        }
+    }
+    
+    Write-Host ""
+    Write-Step "$msiCount dispositivos (GPU/USB) configurados para MSI Mode"
+    Write-Info "A GPU foi definida com Interrupt Priority = High"
+}
+
+# ============================================================
 # AVANCADO: BCDEDIT TWEAKS (NOVO - Reddit/Foruns)
 # ============================================================
 function Apply-BCDEdit {
@@ -1149,6 +1202,17 @@ function Apply-BCDEdit {
     bcdedit /set tscsyncpolicy enhanced 2>$null
     Write-Step "TSC Sync Policy: Enhanced"
     Write-Info "Reverter: bcdedit /deletevalue tscsyncpolicy"
+
+    # Desativar HPET (High Precision Event Timer)
+    bcdedit /set useplatformclock false 2>$null
+    Write-Step "HPET desativado (useplatformclock false)"
+
+    # Desativar Core Parking via PowerCFG
+    Write-Host ""
+    Write-Host "    🔋 Energia (Core Parking):" -ForegroundColor Yellow
+    powercfg /setacvalueindex scheme_current sub_processor 0cc5b647-c1df-4637-891a-dec35c318583 100 2>$null
+    powercfg /setactive scheme_current 2>$null
+    Write-Step "Core Parking: DESATIVADO (Min Cores 100%)"
 }
 
 # ============================================================
@@ -1722,6 +1786,9 @@ Remove-Bloatware
 
 Show-Progress "Otimizando Agendador de Tarefas"
 Optimize-ScheduledTasks
+
+Show-Progress "Otimizando Interrupcoes (MSI Mode)"
+Optimize-Interrupts
 
 Show-Progress "BCDEDIT Tweaks (Timer, Dynamic Tick)"
 Apply-BCDEdit
