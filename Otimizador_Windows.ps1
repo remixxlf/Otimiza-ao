@@ -25,6 +25,34 @@ FONTES:
 $Host.UI.RawUI.WindowTitle = "Otimizador Windows v3.0 - Zero-Click Edition"
 $ErrorActionPreference = "SilentlyContinue"
 
+# Desativar QuickEdit Mode para impedir que cliques pausem o console
+$quickEditCode = @"
+using System;
+using System.Runtime.InteropServices;
+public class ConsoleHelper {
+    const uint ENABLE_QUICK_EDIT = 0x0040;
+    const int STD_INPUT_HANDLE = -10;
+    [DllImport("kernel32.dll", SetLastError = true)]
+    static extern IntPtr GetStdHandle(int nStdHandle);
+    [DllImport("kernel32.dll")]
+    static extern bool GetConsoleMode(IntPtr hConsoleHandle, out uint lpMode);
+    [DllImport("kernel32.dll")]
+    static extern bool SetConsoleMode(IntPtr hConsoleHandle, uint dwMode);
+    public static void DisableQuickEdit() {
+        IntPtr consoleHandle = GetStdHandle(STD_INPUT_HANDLE);
+        uint consoleMode;
+        if (GetConsoleMode(consoleHandle, out consoleMode)) {
+            consoleMode &= ~ENABLE_QUICK_EDIT;
+            SetConsoleMode(consoleHandle, consoleMode);
+        }
+    }
+}
+"@
+try {
+    Add-Type -TypeDefinition $quickEditCode -ErrorAction SilentlyContinue
+    [ConsoleHelper]::DisableQuickEdit()
+} catch {}
+
 # Inicializar arquivo de log temporario
 $script:logFile = "$env:TEMP\Relatorio_Otimizacao.txt"
 "=============================================" | Out-File -FilePath $script:logFile -Encoding UTF8
