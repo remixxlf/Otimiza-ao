@@ -417,8 +417,8 @@ function Create-RestorePoint {
         # 3. Forcar ativacao no Registro Geral e remover limite de frequencia
         $srKey = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\SystemRestore"
         if (-not (Test-Path $srKey)) { New-Item -Path $srKey -Force | Out-Null }
-        Set-ItemProperty -Path $srKey -Name "DisableSR" -Value 0 -Type DWord -Force -ErrorAction SilentlyContinue
-        Set-ItemProperty -Path $srKey -Name "SystemRestorePointCreationFrequency" -Value 0 -Type DWord -Force -ErrorAction SilentlyContinue
+        Set-RegKey -Path $srKey -Name "DisableSR" -Value 0 -Type DWord -Force
+        Set-RegKey -Path $srKey -Name "SystemRestorePointCreationFrequency" -Value 0 -Type DWord -Force
         
         # 4. Habilitar no drive C:
         Enable-ComputerRestore -Drive "C:\" -ErrorAction SilentlyContinue | Out-Null
@@ -575,20 +575,20 @@ function Apply-RegistryTweaks {
     Write-Host ""
     Write-Host "    📊 Visual e Desempenho:" -ForegroundColor Yellow
 
-    Set-ItemProperty -Path "HKCU:\Control Panel\Desktop\WindowMetrics" -Name "MinAnimate" -Value "0" -Type String 2>$null
+    Set-RegKey -Path "HKCU:\Control Panel\Desktop\WindowMetrics" -Name "MinAnimate" -Value "0" -Type String
     Write-Step "Animacoes de minimizar/maximizar desativadas"
 
-    Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize" -Name "EnableTransparency" -Value 0 -Type DWord 2>$null
+    Set-RegKey -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize" -Name "EnableTransparency" -Value 0 -Type DWord
     Write-Step "Transparencia de janelas desativada (economiza GPU)"
 
-    Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\VisualEffects" -Name "VisualFXSetting" -Value 2 -Type DWord 2>$null
+    Set-RegKey -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\VisualEffects" -Name "VisualFXSetting" -Value 2 -Type DWord
     Write-Step "Efeitos visuais otimizados para desempenho"
 
-    Set-ItemProperty -Path "HKCU:\Control Panel\Desktop" -Name "MenuShowDelay" -Value "0" -Type String 2>$null
+    Set-RegKey -Path "HKCU:\Control Panel\Desktop" -Name "MenuShowDelay" -Value "0" -Type String
     Write-Step "Delay do menu de contexto: 0ms (era 400ms)"
 
     # Desativar Shake to Minimize (NOVO - Reddit)
-    Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "DisallowShaking" -Value 1 -Type DWord 2>$null
+    Set-RegKey -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "DisallowShaking" -Value 1 -Type DWord
     Write-Step "Shake to Minimize desativado"
 
     # --- GAME MODE + HAGS (NOVO - Reddit consenso) ---
@@ -597,8 +597,7 @@ function Apply-RegistryTweaks {
     Write-Info "Consenso Reddit 2025: Game Mode ON + HAGS ON = melhor combo"
 
     # Ativar Game Mode (Reddit: MANTER ativado, reduz priority de background)
-    Ensure-RegPath "HKCU:\SOFTWARE\Microsoft\GameBar"
-    Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\GameBar" -Name "AutoGameModeEnabled" -Value 1 -Type DWord 2>$null
+    Set-RegKey -Path "HKCU:\SOFTWARE\Microsoft\GameBar" -Name "AutoGameModeEnabled" -Value 1 -Type DWord
     Write-Step "Game Mode: ATIVADO (prioriza jogos automaticamente)"
 
     # --- INPUT LAG ---
@@ -606,34 +605,32 @@ function Apply-RegistryTweaks {
     Write-Host "    🖱️ Reducao de Input Lag:" -ForegroundColor Yellow
 
     # Desativar aceleracao do mouse
-    Set-ItemProperty -Path "HKCU:\Control Panel\Mouse" -Name "MouseSpeed" -Value "0" -Type String 2>$null
-    Set-ItemProperty -Path "HKCU:\Control Panel\Mouse" -Name "MouseThreshold1" -Value "0" -Type String 2>$null
-    Set-ItemProperty -Path "HKCU:\Control Panel\Mouse" -Name "MouseThreshold2" -Value "0" -Type String 2>$null
+    Set-RegKey -Path "HKCU:\Control Panel\Mouse" -Name "MouseSpeed" -Value "0" -Type String
+    Set-RegKey -Path "HKCU:\Control Panel\Mouse" -Name "MouseThreshold1" -Value "0" -Type String
+    Set-RegKey -Path "HKCU:\Control Panel\Mouse" -Name "MouseThreshold2" -Value "0" -Type String
     Write-Step "Aceleracao do mouse desativada (raw input 1:1)"
 
     # Enhance Pointer Precision OFF
-    Set-ItemProperty -Path "HKCU:\Control Panel\Mouse" -Name "MouseSensitivity" -Value "10" -Type String 2>$null
+    Set-RegKey -Path "HKCU:\Control Panel\Mouse" -Name "MouseSensitivity" -Value "10" -Type String
     Write-Step 'Mouse sensitivity: padrao (6/11 no painel)'
 
     # Desativar Game Bar / Game DVR (CONSENSO: desativar overlay)
     $gamebar = "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\GameDVR"
-    Ensure-RegPath $gamebar
-    Set-ItemProperty -Path $gamebar -Name "AppCaptureEnabled" -Value 0 -Type DWord 2>$null
+    Set-RegKey -Path $gamebar -Name "AppCaptureEnabled" -Value 0 -Type DWord
 
     $gamebarPolicy = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\GameDVR"
-    Ensure-RegPath $gamebarPolicy
-    Set-ItemProperty -Path $gamebarPolicy -Name "AllowGameDVR" -Value 0 -Type DWord 2>$null
+    Set-RegKey -Path $gamebarPolicy -Name "AllowGameDVR" -Value 0 -Type DWord
 
     # Desativar overlay do Game Bar
-    Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\GameBar" -Name "UseNexusForGameBarEnabled" -Value 0 -Type DWord 2>$null
+    Set-RegKey -Path "HKCU:\SOFTWARE\Microsoft\GameBar" -Name "UseNexusForGameBarEnabled" -Value 0 -Type DWord
     Write-Step "Game Bar Overlay + DVR desativados"
 
     # Fullscreen Optimizations (desativar globalmente = menos input lag)
-    Set-ItemProperty -Path "HKCU:\System\GameConfigStore" -Name "GameDVR_FSEBehaviorMode" -Value 2 -Type DWord 2>$null
-    Set-ItemProperty -Path "HKCU:\System\GameConfigStore" -Name "GameDVR_HonorUserFSEBehaviorMode" -Value 1 -Type DWord 2>$null
-    Set-ItemProperty -Path "HKCU:\System\GameConfigStore" -Name "GameDVR_FSEBehavior" -Value 2 -Type DWord 2>$null
-    Set-ItemProperty -Path "HKCU:\System\GameConfigStore" -Name "GameDVR_DXGIHonorFSEWindowsCompatible" -Value 1 -Type DWord 2>$null
-    Set-ItemProperty -Path "HKCU:\System\GameConfigStore" -Name "GameDVR_EFSEFeatureFlags" -Value 0 -Type DWord 2>$null
+    Set-RegKey -Path "HKCU:\System\GameConfigStore" -Name "GameDVR_FSEBehaviorMode" -Value 2 -Type DWord
+    Set-RegKey -Path "HKCU:\System\GameConfigStore" -Name "GameDVR_HonorUserFSEBehaviorMode" -Value 1 -Type DWord
+    Set-RegKey -Path "HKCU:\System\GameConfigStore" -Name "GameDVR_FSEBehavior" -Value 2 -Type DWord
+    Set-RegKey -Path "HKCU:\System\GameConfigStore" -Name "GameDVR_DXGIHonorFSEWindowsCompatible" -Value 1 -Type DWord
+    Set-RegKey -Path "HKCU:\System\GameConfigStore" -Name "GameDVR_EFSEFeatureFlags" -Value 0 -Type DWord
     Write-Step "Fullscreen Optimizations desativadas globalmente"
 
     # --- REDE / TELEMETRIA ---
@@ -641,40 +638,36 @@ function Apply-RegistryTweaks {
     Write-Host "    🔒 Privacidade e Telemetria:" -ForegroundColor Yellow
 
     $dataCollection = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\DataCollection"
-    Ensure-RegPath $dataCollection
-    Set-ItemProperty -Path $dataCollection -Name "AllowTelemetry" -Value 0 -Type DWord 2>$null
+    Set-RegKey -Path $dataCollection -Name "AllowTelemetry" -Value 0 -Type DWord
     Write-Step "Telemetria do Windows: nivel 0 (Security)"
 
     $cortana = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Search"
-    Ensure-RegPath $cortana
-    Set-ItemProperty -Path $cortana -Name "AllowCortana" -Value 0 -Type DWord 2>$null
+    Set-RegKey -Path $cortana -Name "AllowCortana" -Value 0 -Type DWord
     Write-Step "Cortana desativada"
 
     # Desativar Bing Search no Menu Iniciar (NOVO - muito pedido no Reddit)
-    Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Search" -Name "BingSearchEnabled" -Value 0 -Type DWord 2>$null
-    Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Search" -Name "CortanaConsent" -Value 0 -Type DWord 2>$null
+    Set-RegKey -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Search" -Name "BingSearchEnabled" -Value 0 -Type DWord
+    Set-RegKey -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Search" -Name "CortanaConsent" -Value 0 -Type DWord
     Write-Step "Bing Search no Menu Iniciar desativado"
 
     # Desativar tips, sugestoes e anuncios
     $cdm = "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\ContentDeliveryManager"
-    Set-ItemProperty -Path $cdm -Name "SystemPaneSuggestionsEnabled" -Value 0 -Type DWord 2>$null
-    Set-ItemProperty -Path $cdm -Name "SoftLandingEnabled" -Value 0 -Type DWord 2>$null
-    Set-ItemProperty -Path $cdm -Name "SubscribedContent-338388Enabled" -Value 0 -Type DWord 2>$null
-    Set-ItemProperty -Path $cdm -Name "SubscribedContent-338389Enabled" -Value 0 -Type DWord 2>$null
-    Set-ItemProperty -Path $cdm -Name "SubscribedContent-310093Enabled" -Value 0 -Type DWord 2>$null
-    Set-ItemProperty -Path $cdm -Name "SubscribedContent-353694Enabled" -Value 0 -Type DWord 2>$null
-    Set-ItemProperty -Path $cdm -Name "SubscribedContent-353696Enabled" -Value 0 -Type DWord 2>$null
-    Set-ItemProperty -Path $cdm -Name "RotatingLockScreenOverlayEnabled" -Value 0 -Type DWord 2>$null
-    Set-ItemProperty -Path $cdm -Name "RotatingLockScreenEnabled" -Value 0 -Type DWord 2>$null
-    Set-ItemProperty -Path $cdm -Name "SilentInstalledAppsEnabled" -Value 0 -Type DWord 2>$null
+    Set-RegKey -Path $cdm -Name "SystemPaneSuggestionsEnabled" -Value 0 -Type DWord
+    Set-RegKey -Path $cdm -Name "SoftLandingEnabled" -Value 0 -Type DWord
+    Set-RegKey -Path $cdm -Name "SubscribedContent-338388Enabled" -Value 0 -Type DWord
+    Set-RegKey -Path $cdm -Name "SubscribedContent-338389Enabled" -Value 0 -Type DWord
+    Set-RegKey -Path $cdm -Name "SubscribedContent-310093Enabled" -Value 0 -Type DWord
+    Set-RegKey -Path $cdm -Name "SubscribedContent-353694Enabled" -Value 0 -Type DWord
+    Set-RegKey -Path $cdm -Name "SubscribedContent-353696Enabled" -Value 0 -Type DWord
+    Set-RegKey -Path $cdm -Name "RotatingLockScreenOverlayEnabled" -Value 0 -Type DWord
+    Set-RegKey -Path $cdm -Name "RotatingLockScreenEnabled" -Value 0 -Type DWord
+    Set-RegKey -Path $cdm -Name "SilentInstalledAppsEnabled" -Value 0 -Type DWord
     Write-Step "Tips, sugestoes, anuncios e instalacao silenciosa desativados"
 
     # Desativar Wi-Fi Sense (NOVO)
     $wifiSense = "HKLM:\SOFTWARE\Microsoft\PolicyManager\default\WiFi"
-    Ensure-RegPath "$wifiSense\AllowWiFiHotSpotReporting"
-    Set-ItemProperty -Path "$wifiSense\AllowWiFiHotSpotReporting" -Name "Value" -Value 0 -Type DWord 2>$null
-    Ensure-RegPath "$wifiSense\AllowAutoConnectToWiFiSenseHotspots"
-    Set-ItemProperty -Path "$wifiSense\AllowAutoConnectToWiFiSenseHotspots" -Name "Value" -Value 0 -Type DWord 2>$null
+    Set-RegKey -Path "$wifiSense\AllowWiFiHotSpotReporting" -Name "Value" -Value 0 -Type DWord
+    Set-RegKey -Path "$wifiSense\AllowAutoConnectToWiFiSenseHotspots" -Name "Value" -Value 0 -Type DWord
     Write-Step "Wi-Fi Sense desativado"
 
     # --- PRIORIDADE DE JOGOS ---
@@ -682,20 +675,19 @@ function Apply-RegistryTweaks {
     Write-Host "    🏆 Prioridade de Jogos (SystemProfile):" -ForegroundColor Yellow
 
     $gpuPriority = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games"
-    Ensure-RegPath $gpuPriority
-    Set-ItemProperty -Path $gpuPriority -Name "GPU Priority" -Value 8 -Type DWord 2>$null
-    Set-ItemProperty -Path $gpuPriority -Name "Priority" -Value 6 -Type DWord 2>$null
-    Set-ItemProperty -Path $gpuPriority -Name "Scheduling Category" -Value "High" -Type String 2>$null
-    Set-ItemProperty -Path $gpuPriority -Name "SFIO Priority" -Value "High" -Type String 2>$null
-    Set-ItemProperty -Path $gpuPriority -Name "Background Only" -Value "False" -Type String 2>$null
-    Set-ItemProperty -Path $gpuPriority -Name "Clock Rate" -Value 10000 -Type DWord 2>$null
+    Set-RegKey -Path $gpuPriority -Name "GPU Priority" -Value 8 -Type DWord
+    Set-RegKey -Path $gpuPriority -Name "Priority" -Value 6 -Type DWord
+    Set-RegKey -Path $gpuPriority -Name "Scheduling Category" -Value "High" -Type String
+    Set-RegKey -Path $gpuPriority -Name "SFIO Priority" -Value "High" -Type String
+    Set-RegKey -Path $gpuPriority -Name "Background Only" -Value "False" -Type String
+    Set-RegKey -Path $gpuPriority -Name "Clock Rate" -Value 10000 -Type DWord
     Write-Step "Game Priority: GPU=8, CPU=6, Schedule=High"
 
-    Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile" -Name "SystemResponsiveness" -Value 0 -Type DWord 2>$null
+    Set-RegKey -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile" -Name "SystemResponsiveness" -Value 0 -Type DWord
     Write-Step "SystemResponsiveness: 0% reservado para background"
 
     # Prioridade de rede para jogos (NOVO)
-    Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile" -Name "NetworkThrottlingIndex" -Value 0xffffffff -Type DWord 2>$null
+    Set-RegKey -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile" -Name "NetworkThrottlingIndex" -Value 0xffffffff -Type DWord
     Write-Step "Network Throttling Index: desativado para jogos"
 }
 
@@ -712,9 +704,9 @@ function Optimize-Network {
 
     $interfaces = Get-ChildItem "HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters\Interfaces"
     foreach ($interface in $interfaces) {
-        Set-ItemProperty -Path $interface.PSPath -Name "TcpAckFrequency" -Value 1 -Type DWord 2>$null
-        Set-ItemProperty -Path $interface.PSPath -Name "TCPNoDelay" -Value 1 -Type DWord 2>$null
-        Set-ItemProperty -Path $interface.PSPath -Name "TcpDelAckTicks" -Value 0 -Type DWord 2>$null
+        Set-RegKey -Path $interface.PSPath -Name "TcpAckFrequency" -Value 1 -Type DWord
+        Set-RegKey -Path $interface.PSPath -Name "TCPNoDelay" -Value 1 -Type DWord
+        Set-RegKey -Path $interface.PSPath -Name "TcpDelAckTicks" -Value 0 -Type DWord
     }
     Write-Step "Nagle's Algorithm OFF + TCP ACK imediato"
     Write-Info "Pacotes enviados imediatamente sem buffering"
@@ -754,8 +746,7 @@ function Optimize-Network {
 
     # Desativar QoS packet scheduler weight (NOVO)
     $qos = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Psched"
-    Ensure-RegPath $qos
-    Set-ItemProperty -Path $qos -Name "NonBestEffortLimit" -Value 0 -Type DWord 2>$null
+    Set-RegKey -Path $qos -Name "NonBestEffortLimit" -Value 0 -Type DWord
     Write-Step "QoS reserva de banda: 0% (era 20% por padrao)"
 
     # DNS otimizado
@@ -767,8 +758,8 @@ function Optimize-Network {
 
     # DNS Cache otimizado (NOVO)
     $dnsCache = "HKLM:\SYSTEM\CurrentControlSet\Services\Dnscache\Parameters"
-    Set-ItemProperty -Path $dnsCache -Name "MaxCacheEntryTtlLimit" -Value 86400 -Type DWord 2>$null
-    Set-ItemProperty -Path $dnsCache -Name "MaxNegativeCacheTtl" -Value 5 -Type DWord 2>$null
+    Set-RegKey -Path $dnsCache -Name "MaxCacheEntryTtlLimit" -Value 86400 -Type DWord
+    Set-RegKey -Path $dnsCache -Name "MaxNegativeCacheTtl" -Value 5 -Type DWord
     Write-Step "DNS Cache otimizado (TTL max 24h, neg cache 5s)"
 }
 
@@ -885,34 +876,32 @@ function Optimize-GPU {
 
     # HAGS (Hardware Accelerated GPU Scheduling)
     $gpuSchd = "HKLM:\SYSTEM\CurrentControlSet\Control\GraphicsDrivers"
-    Set-ItemProperty -Path $gpuSchd -Name "HwSchMode" -Value 2 -Type DWord 2>$null
+    Set-RegKey -Path $gpuSchd -Name "HwSchMode" -Value 2 -Type DWord
     Write-Step "HAGS (Hardware Accelerated GPU Scheduling): Ativado"
     Write-Info "Reduz latencia de rendering, aprovado pela comunidade"
 
     # Desativar MPO
-    Set-ItemProperty -Path $gpuSchd -Name "DisableOverlays" -Value 1 -Type DWord 2>$null
+    Set-RegKey -Path $gpuSchd -Name "DisableOverlays" -Value 1 -Type DWord
     Write-Step "Multi-Plane Overlay (MPO) desativado"
     Write-Info "Resolve stutters em MUITAS configs (consenso Reddit)"
 
     # TDR Level ajustado (evita "driver stopped responding")
-    Set-ItemProperty -Path $gpuSchd -Name "TdrDelay" -Value 10 -Type DWord 2>$null
-    Set-ItemProperty -Path $gpuSchd -Name "TdrDdiDelay" -Value 10 -Type DWord 2>$null
+    Set-RegKey -Path $gpuSchd -Name "TdrDelay" -Value 10 -Type DWord
+    Set-RegKey -Path $gpuSchd -Name "TdrDdiDelay" -Value 10 -Type DWord
     Write-Step "TDR Delay: 10s (evita falsos 'driver stopped responding')"
 
     # DXGI Timeout
     $dxgi = "HKLM:\SYSTEM\CurrentControlSet\Control\GraphicsDrivers\DCI"
-    Ensure-RegPath $dxgi
-    Set-ItemProperty -Path $dxgi -Name "Timeout" -Value 7 -Type DWord 2>$null
+    Set-RegKey -Path $dxgi -Name "Timeout" -Value 7 -Type DWord
     Write-Step "DXGI Timeout otimizado"
 
     # Desativar GPU Preemption (Preempcao de GPU)
-    Set-ItemProperty -Path $gpuSchd -Name "DxgkEnablePreemption" -Value 0 -Type DWord 2>$null
+    Set-RegKey -Path $gpuSchd -Name "DxgkEnablePreemption" -Value 0 -Type DWord
     Write-Step "GPU Preemption: DESATIVADO (Frame timing mais consistente)"
 
     # Otimizar DirectX (Forcar Flip Model via registro)
     $dxMode = "HKLM:\SOFTWARE\Microsoft\DirectX"
-    Ensure-RegPath $dxMode
-    Set-ItemProperty -Path $dxMode -Name "D3D12FlipModel" -Value 1 -Type DWord 2>$null
+    Set-RegKey -Path $dxMode -Name "D3D12FlipModel" -Value 1 -Type DWord
     Write-Step "DXGI Flip Model: FORCADO (menor latencia em DX11/12)"
 
     # Otimizacoes por Marca de GPU
@@ -924,15 +913,15 @@ function Optimize-GPU {
         $nvProfile = "HKLM:\SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0000"
         if (Test-Path $nvProfile) {
             # Desativar HDCP Overhead
-            Set-ItemProperty -Path $nvProfile -Name "RMHdcpKeyglobZero" -Value 1 -Type DWord 2>$null
+            Set-RegKey -Path $nvProfile -Name "RMHdcpKeyglobZero" -Value 1 -Type DWord
             Write-Step "NVIDIA: HDCP overhead reduzido"
             
             # Forcar Shader Cache Ilimitado via Registro (4096 = Ilimitado em drivers modernos)
-            Set-ItemProperty -Path $nvProfile -Name "ShaderCacheSize" -Value 4096 -Type DWord 2>$null
+            Set-RegKey -Path $nvProfile -Name "ShaderCacheSize" -Value 4096 -Type DWord
             Write-Step "NVIDIA: Shader Cache setado para ILIMITADO via Registro"
 
             # Prefer Maximum Performance (PowerManagementMode = 1)
-            Set-ItemProperty -Path $nvProfile -Name "PowerManagementMode" -Value 1 -Type DWord 2>$null
+            Set-RegKey -Path $nvProfile -Name "PowerManagementMode" -Value 1 -Type DWord
             Write-Step "NVIDIA: Modo de Energia Máximo Desempenho forçado"
         }
 
@@ -958,7 +947,7 @@ function Optimize-GPU {
         $ulpsCount = 0
         foreach ($path in $amdDriverPaths) {
             if ($path.EnableUlps -ne $null) {
-                Set-ItemProperty -Path $path.PSPath -Name "EnableUlps" -Value 0 -Type DWord 2>$null
+                Set-RegKey -Path $path.PSPath -Name "EnableUlps" -Value 0 -Type DWord
                 $ulpsCount++
             }
         }
@@ -1181,20 +1170,17 @@ function Optimize-Interrupts {
 
         if ($classDesc -match "Display|USB" -or $deviceDesc -match "Display|USB|VGA|NVIDIA|AMD|Radeon|Intel") {
             $intManag = "$($dev.PSPath)\Interrupt Management"
-            Ensure-RegPath $intManag
             
             # MessageSignaledInterruptProperties
             $msiProp = "$intManag\MessageSignaledInterruptProperties"
-            Ensure-RegPath $msiProp
-            Set-ItemProperty -Path $msiProp -Name "MSISupported" -Value 1 -Type DWord -ErrorAction SilentlyContinue
+            Set-RegKey -Path $msiProp -Name "MSISupported" -Value 1 -Type DWord
             
             # Affinity Policy (Device Priority)
             $affPolicy = "$intManag\Affinity Policy"
-            Ensure-RegPath $affPolicy
             
             # 3 = High, 2 = Normal
             $priority = if ($classDesc -match "Display" -or $deviceDesc -match "Display|VGA|NVIDIA|AMD") { 3 } else { 2 }
-            Set-ItemProperty -Path $affPolicy -Name "DevicePriority" -Value $priority -Type DWord -ErrorAction SilentlyContinue
+            Set-RegKey -Path $affPolicy -Name "DevicePriority" -Value $priority -Type DWord
             
             $msiCount++
         }
@@ -1260,19 +1246,17 @@ function Disable-VBS {
 
     # Memory Integrity (Core Isolation)
     $hvci = "HKLM:\SYSTEM\CurrentControlSet\Control\DeviceGuard\Scenarios\HypervisorEnforcedCodeIntegrity"
-    Ensure-RegPath $hvci
-    Set-ItemProperty -Path $hvci -Name "Enabled" -Value 0 -Type DWord 2>$null
+    Set-RegKey -Path $hvci -Name "Enabled" -Value 0 -Type DWord
     Write-Step "Memory Integrity (HVCI) desativado"
 
     # VBS
     $deviceGuard = "HKLM:\SYSTEM\CurrentControlSet\Control\DeviceGuard"
-    Set-ItemProperty -Path $deviceGuard -Name "EnableVirtualizationBasedSecurity" -Value 0 -Type DWord 2>$null
+    Set-RegKey -Path $deviceGuard -Name "EnableVirtualizationBasedSecurity" -Value 0 -Type DWord
     Write-Step "Virtualization Based Security desativado"
 
     # Desativar Credential Guard (NOVO)
     $credGuard = "HKLM:\SYSTEM\CurrentControlSet\Control\DeviceGuard\Scenarios\CredentialGuard"
-    Ensure-RegPath $credGuard
-    Set-ItemProperty -Path $credGuard -Name "Enabled" -Value 0 -Type DWord 2>$null
+    Set-RegKey -Path $credGuard -Name "Enabled" -Value 0 -Type DWord
     Write-Step "Credential Guard desativado"
 
     # Desativar Hypervisor (opcional, mais agressivo)
@@ -1385,7 +1369,7 @@ function Disable-CFG {
 
     Write-Host ""
     Write-Host "    [!] Desativando CFG automaticamente..." -ForegroundColor Green
-    Set-ItemProperty -Path "HKLM:\System\CurrentControlSet\Control\Session Manager\kernel" -Name "MitigationOptions" -Value ([byte[]](2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2)) -Type Binary 2>$null
+    Set-RegKey -Path "HKLM:\System\CurrentControlSet\Control\Session Manager\kernel" -Name "MitigationOptions" -Value ([byte[]](2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2)) -Type Binary
     
     Set-ProcessMitigation -System -Disable CFG 2>$null
     Write-Step "CFG desativado globalmente"
@@ -1424,11 +1408,11 @@ function Apply-DeepTweaks {
 
     $memMgmt = "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management"
     # Large System Cache
-    Set-ItemProperty -Path $memMgmt -Name "LargeSystemCache" -Value 0 -Type DWord 2>$null
+    Set-RegKey -Path $memMgmt -Name "LargeSystemCache" -Value 0 -Type DWord
     Write-Step "Large System Cache: OFF (melhor para gaming)"
 
     # Desativar Paging Executive (manter kernel na RAM)
-    Set-ItemProperty -Path $memMgmt -Name "DisablePagingExecutive" -Value 1 -Type DWord 2>$null
+    Set-RegKey -Path $memMgmt -Name "DisablePagingExecutive" -Value 1 -Type DWord
     Write-Step "Kernel sempre na RAM (nunca paginado para disco)"
 
     # Desativar Spectre/Meltdown mitigations (OPCIONAL - controvertido)
@@ -1442,7 +1426,7 @@ function Apply-DeepTweaks {
     # Desativar Notifications (NOVO)
     Write-Host ""
     Write-Host "    🔕 Notificacoes:" -ForegroundColor Yellow
-    Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\PushNotifications" -Name "ToastEnabled" -Value 0 -Type DWord 2>$null
+    Set-RegKey -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\PushNotifications" -Name "ToastEnabled" -Value 0 -Type DWord
     Write-Step "Notificacoes toast: Desativadas (menos interrupcoes)"
 
     # Desativar Focus Assist automatico (NOVO)
@@ -1451,13 +1435,12 @@ function Apply-DeepTweaks {
 
     # Windows Delivery Optimization OFF (NOVO)
     $doPolicy = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\DeliveryOptimization"
-    Ensure-RegPath $doPolicy
-    Set-ItemProperty -Path $doPolicy -Name "DODownloadMode" -Value 0 -Type DWord 2>$null
+    Set-RegKey -Path $doPolicy -Name "DODownloadMode" -Value 0 -Type DWord
     Write-Step "Delivery Optimization: OFF (sem P2P de updates)"
 
     # Desativar Background Apps (NOVO - Win10)
     $bgApps = "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\BackgroundAccessApplications"
-    Set-ItemProperty -Path $bgApps -Name "GlobalUserDisabled" -Value 1 -Type DWord 2>$null
+    Set-RegKey -Path $bgApps -Name "GlobalUserDisabled" -Value 1 -Type DWord
     Write-Step 'Background Apps: Desativadas globalmente'
 }
 
@@ -1601,18 +1584,16 @@ function Apply-ExtremeTweaks {
     Write-Host ""
     Write-Host "    🎮 Agendador de Games (SystemProfile):" -ForegroundColor Yellow
     $sysProfile = 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games'
-    Ensure-RegPath $sysProfile
-    Set-ItemProperty -Path $sysProfile -Name 'GPU Priority' -Value 8 -Type DWord 2>$null
-    Set-ItemProperty -Path $sysProfile -Name 'Priority' -Value 6 -Type DWord 2>$null
-    Set-ItemProperty -Path $sysProfile -Name 'Scheduling Category' -Value 'High' -Type String 2>$null
+    Set-RegKey -Path $sysProfile -Name 'GPU Priority' -Value 8 -Type DWord
+    Set-RegKey -Path $sysProfile -Name 'Priority' -Value 6 -Type DWord
+    Set-RegKey -Path $sysProfile -Name 'Scheduling Category' -Value 'High' -Type String
     Write-Step 'Prioridade de Processamento para Jogos: ALTA'
 
     # 2. Desativar Fullscreen Optimizations globalmente
     Write-Host ""
     Write-Host "    📺 Fullscreen Optimizations:" -ForegroundColor Yellow
     $fso = 'HKCU:\System\GameConfigStore'
-    Ensure-RegPath $fso
-    Set-ItemProperty -Path $fso -Name 'GameDVR_FSEBehaviorMode' -Value 2 -Type DWord 2>$null
+    Set-RegKey -Path $fso -Name 'GameDVR_FSEBehaviorMode' -Value 2 -Type DWord
     Write-Step 'True Exclusive Fullscreen: FORCADO (Menos input lag)'
 
     # 3. TCP/IP Latency (TcpAckFrequency)
@@ -1621,8 +1602,8 @@ function Apply-ExtremeTweaks {
     $interfaces = Get-ItemProperty 'HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters\Interfaces\*' -ErrorAction SilentlyContinue
     foreach ($iface in $interfaces) {
         if ($iface.DhcpIPAddress -or $iface.IPAddress) {
-            Set-ItemProperty -Path $iface.PSPath -Name 'TcpAckFrequency' -Value 1 -Type DWord 2>$null
-            Set-ItemProperty -Path $iface.PSPath -Name 'TCPNoDelay' -Value 1 -Type DWord 2>$null
+            Set-RegKey -Path $iface.PSPath -Name 'TcpAckFrequency' -Value 1 -Type DWord
+            Set-RegKey -Path $iface.PSPath -Name 'TCPNoDelay' -Value 1 -Type DWord
         }
     }
     Write-Step 'TcpAckFrequency/TCPNoDelay: 1 (Menor Ping)'
@@ -1631,8 +1612,7 @@ function Apply-ExtremeTweaks {
     Write-Host ""
     Write-Host "    ⚡ Power Throttling:" -ForegroundColor Yellow
     $powerThrottling = 'HKLM:\SYSTEM\CurrentControlSet\Control\Power\PowerThrottling'
-    Ensure-RegPath $powerThrottling
-    Set-ItemProperty -Path $powerThrottling -Name 'PowerThrottlingOff' -Value 1 -Type DWord 2>$null
+    Set-RegKey -Path $powerThrottling -Name 'PowerThrottlingOff' -Value 1 -Type DWord
     Write-Step 'Gerenciamento agressivo de energia: DESATIVADO'
     
     Write-Info 'Para MSI Mode, recomendamos baixar o "MSI Utility v3" e configurar manualmente sua GPU.'
@@ -1665,17 +1645,14 @@ function Apply-UltraDebloat {
     Write-Host "    🤖 Microsoft Copilot / Recall / Widgets:" -ForegroundColor Yellow
     # Copilot
     $copilotPolicy = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsCopilot"
-    Ensure-RegPath $copilotPolicy
-    Set-ItemProperty -Path $copilotPolicy -Name "TurnOffWindowsCopilot" -Value 1 -Type DWord 2>$null
+    Set-RegKey -Path $copilotPolicy -Name "TurnOffWindowsCopilot" -Value 1 -Type DWord
     # Recall
     $recallPolicy = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsAI"
-    Ensure-RegPath $recallPolicy
-    Set-ItemProperty -Path $recallPolicy -Name "DisableAIDataAnalysis" -Value 1 -Type DWord 2>$null
+    Set-RegKey -Path $recallPolicy -Name "DisableAIDataAnalysis" -Value 1 -Type DWord
     # Widgets
     $widgetPolicy = "HKLM:\SOFTWARE\Policies\Microsoft\Dsh"
-    Ensure-RegPath $widgetPolicy
-    Set-ItemProperty -Path $widgetPolicy -Name "AllowNewsAndInterests" -Value 0 -Type DWord 2>$null
-    Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "TaskbarDa" -Value 0 -Type DWord 2>$null
+    Set-RegKey -Path $widgetPolicy -Name "AllowNewsAndInterests" -Value 0 -Type DWord
+    Set-RegKey -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "TaskbarDa" -Value 0 -Type DWord
     Write-Step "Copilot, Recall e Widgets: DESATIVADOS"
 
     # 4. Remover Capacidades Extras via DISM
@@ -1766,9 +1743,9 @@ function Apply-UltraDebloat {
     # 7. Desativar Activity History
     Write-Host ""
     Write-Host "    📋 Historico de Atividades:" -ForegroundColor Yellow
-    Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\System" -Name "EnableActivityFeed" -Value 0 -Type DWord -ErrorAction SilentlyContinue
-    Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\System" -Name "PublishUserActivities" -Value 0 -Type DWord -ErrorAction SilentlyContinue
-    Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\System" -Name "UploadUserActivities" -Value 0 -Type DWord -ErrorAction SilentlyContinue
+    Set-RegKey -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\System" -Name "EnableActivityFeed" -Value 0 -Type DWord
+    Set-RegKey -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\System" -Name "PublishUserActivities" -Value 0 -Type DWord
+    Set-RegKey -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\System" -Name "UploadUserActivities" -Value 0 -Type DWord
     Write-Step "Activity History: DESATIVADO (Microsoft nao rastreia mais)"
 }
 
