@@ -1,4 +1,4 @@
-﻿#Requires -RunAsAdministrator
+#Requires -RunAsAdministrator
 <#
 ╔══════════════════════════════════════════════════════════════════════╗
 ║               OTIMIZADOR WINDOWS v2.0 - COMMUNITY EDITION           ║
@@ -118,6 +118,27 @@ function Write-Warn {
 function Ensure-RegPath {
     param([string]$Path)
     if (-not (Test-Path $Path)) { New-Item -Path $Path -Force | Out-Null }
+}
+
+function Set-RegKey {
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]$Path,
+        [Parameter(Mandatory=$true)]
+        [string]$Name,
+        [Parameter(Mandatory=$true)]
+        $Value,
+        [string]$Type = "DWord",
+        [switch]$Force
+    )
+    
+    Ensure-RegPath -Path $Path
+    
+    if ($Force) {
+        Set-ItemProperty -Path $Path -Name $Name -Value $Value -Type $Type -Force -ErrorAction SilentlyContinue
+    } else {
+        Set-ItemProperty -Path $Path -Name $Name -Value $Value -Type $Type -ErrorAction SilentlyContinue
+    }
 }
 
 # ============================================================
