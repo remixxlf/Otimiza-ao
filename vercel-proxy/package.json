@@ -4,5 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "vercel dev"
+  },
+  "dependencies": {
+    "@upstash/redis": "^1.28.4"
   }
 }
